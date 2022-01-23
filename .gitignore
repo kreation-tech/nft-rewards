@@ -1,0 +1,10 @@
+﻿.deps
+contracts/artifacts
+node_modules
+cache
+artifacts
+typechain
+dist
+src/types
+deployments/*/solcInputs
+.env
