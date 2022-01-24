@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 /**
- * ▒▄▀▄▒█▀▄░▀█▀▒██▀░█▄▒▄█░░░█▄░█▒█▀░▀█▀░░▒█▀▄▒██▀░█░░▒█▒▄▀▄▒█▀▄░█▀▄░▄▀▀
- * ░█▀█░█▀▄░▒█▒░█▄▄░█▒▀▒█▒░░█▒▀█░█▀░▒█▒▒░░█▀▄░█▄▄░▀▄▀▄▀░█▀█░█▀▄▒█▄▀▒▄██
+ * ░█▄ █▒█▀░▀█▀  ▒█▀▄▒██▀░█ ░▒█▒▄▀▄▒█▀▄░█▀▄░▄▀▀
+ * ░█▒▀█░█▀ ▒█▒▒░░█▀▄░█▄▄░▀▄▀▄▀░█▀█░█▀▄▒█▄▀▒▄██
  * 
  * Made with 🧡 by Kreation.tech
  */
@@ -13,9 +13,9 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
-import "./MintableEditions.sol";
+import "./MintableRewards.sol";
 
-contract MintableEditionsFactory is AccessControlUpgradeable {
+contract MintableRewardsFactory is AccessControlUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
     
@@ -62,32 +62,32 @@ contract MintableEditionsFactory is AccessControlUpgradeable {
      * @return the address of the editions contract created
      */
     function create(
-        MintableEditions.Info memory info,
+        MintableRewards.Info memory info,
         uint64 size,
         uint256 price,
         uint16 royalties,
-        MintableEditions.Shares[] memory shares,
+        MintableRewards.Shares[] memory shares,
         address allowancesRef
     ) external onlyRole(ARTIST_ROLE) returns (address) {
         require(!_contents[info.contentHash], "Duplicated content");
         _contents[info.contentHash] = true;
         BeaconProxy proxy = new BeaconProxy(
             address(beacon), 
-            abi.encodeWithSelector(MintableEditions(address(0x0)).initialize.selector, _msgSender(), info, size, price, royalties, shares, allowancesRef)
+            abi.encodeWithSelector(MintableRewards(address(0x0)).initialize.selector, _msgSender(), info, size, price, royalties, shares, allowancesRef)
         );
         _counter.increment();
         _editions[_counter.current()] = address(proxy);
-        emit CreatedEditions(_counter.current(), msg.sender, shares, size, address(proxy));
+        emit CreatedRewards(_counter.current(), msg.sender, shares, size, address(proxy));
         return address(proxy);
     }
 
     /**
-     * Gets an editions contract given the unique identifier. Contract ids are zero-based.
+     * Gets an editions contract given the unique identifier.
      * 
-     * @param index zero-based index of editions contract to retrieve
+     * @param editionId identifier of editions contract to retrieve
      * @return the editions contract
      */
-    function get(uint256 index) external view returns (address) {
+    function get(uint256 editionId) external view returns (address) {
         require(editionId <= _counter.current(), "EdNFT doesn't exist");
         return _editions[editionId];
     }
@@ -107,5 +107,5 @@ contract MintableEditionsFactory is AccessControlUpgradeable {
      * @param size the number of tokens this editions contract consists of
      * @param contractAddress the address of the contract representing the editions
      */
-    event CreatedEditions(uint256 indexed index, address indexed creator, MintableEditions.Shares[] indexed shareholders, uint256 size, address contractAddress);
+    event CreatedRewards(uint256 indexed index, address indexed creator, MintableRewards.Shares[] indexed shareholders, uint256 size, address contractAddress);
 }

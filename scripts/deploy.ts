@@ -17,8 +17,8 @@ async function main() {
   addresses[await getChainId()] = contracts;
 
   await addressOf("AllowancesStore");
-  await addressOf("MintableEditions");
-  await addressOf("MintableEditionsFactory");
+  await addressOf("MintableRewards");
+  await addressOf("MintableRewardsFactory");
   writeFileSync("./src/addresses.json", JSON.stringify(addresses, null, 2), { encoding: "utf-8" });
 
   roles.admin = await ethers.constants.HashZero;

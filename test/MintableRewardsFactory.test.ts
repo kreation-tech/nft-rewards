@@ -2,18 +2,18 @@
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumberish } from "ethers";
-import { MintableEditionsFactory, MintableEditions, AllowancesStore } from "../src/types";
+import { MintableRewardsFactory, MintableRewards, AllowancesStore } from "../src/types";
 
 require("chai").use(require("chai-as-promised"));
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
 
-describe("MintableEditionsFactory", function () {
+describe("MintableRewardsFactory", function () {
   let deployer: SignerWithAddress;
   let artist: SignerWithAddress;
   let shareholder: SignerWithAddress;
   let other: SignerWithAddress;
-  let factory: MintableEditionsFactory;
+  let factory: MintableRewardsFactory;
   let store: AllowancesStore;
 
   const info = {
@@ -27,8 +27,8 @@ describe("MintableEditionsFactory", function () {
 
   beforeEach(async () => {
     [deployer, artist, shareholder, other] = await ethers.getSigners();
-    const { MintableEditionsFactory, AllowancesStore } = await deployments.fixture(["editions"]);
-    factory = (await ethers.getContractAt("MintableEditionsFactory", MintableEditionsFactory.address)) as MintableEditionsFactory;
+    const { MintableRewardsFactory, AllowancesStore } = await deployments.fixture(["rewards"]);
+    factory = (await ethers.getContractAt("MintableRewardsFactory", MintableRewardsFactory.address)) as MintableRewardsFactory;
     await factory.grantRole(await factory.ARTIST_ROLE(), artist.address);
 
     const recipients = new Array<{ minter: string, amount: BigNumberish }>(5);
@@ -41,7 +41,7 @@ describe("MintableEditionsFactory", function () {
     await store.update(recipients);
   });
 
-  it("Should emit a CreatedEditions event upon create", async function () {
+  it("Should emit a CreatedRewards event upon create", async function () {
     expect(await factory.instances()).to.be.equal(0);
     const expectedAddress = await factory.get(0);
     await expect(factory.connect(artist).create(
@@ -58,13 +58,13 @@ describe("MintableEditionsFactory", function () {
       [{ holder: (await shareholder.getAddress()), bps: 1500 }],
       store.address))
 
-      .to.emit(factory, "CreatedEditions");
+      .to.emit(factory, "CreatedRewards");
 
     expect(await factory.instances()).to.be.equal(1);
     expect(await factory.get(0)).to.be.equal(expectedAddress);
   });
 
-  it("Should produce an initialized MintableEditions instance upon create", async function () {
+  it("Should produce an initialized MintableRewards instance upon create", async function () {
     const receipt = await (await factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco",
@@ -82,12 +82,12 @@ describe("MintableEditionsFactory", function () {
 
     let contractAddress = "0x0";
     for (const event of receipt.events!) {
-      if (event.event === "CreatedEditions") {
+      if (event.event === "CreatedRewards") {
         contractAddress = event.args![4];
       }
     }
     expect(contractAddress).to.not.be.equal("0x0");
-    const editions = (await ethers.getContractAt("MintableEditions", contractAddress)) as MintableEditions;
+    const editions = (await ethers.getContractAt("MintableRewards", contractAddress)) as MintableRewards;
     expect(await editions.name()).to.be.equal("Roberto Lo Giacco");
     expect(await editions.symbol()).to.be.equal("RLG");
     expect(await editions.contentUrl()).to.be.equal("https://ipfs.io/ipfs/QmYMj2yraaBch5AoBTEjvLFdoT3ULKs4i4Ev7vte72627d");
@@ -122,7 +122,7 @@ describe("MintableEditionsFactory", function () {
 
     let contractAddress = "0x0";
     for (const event of receipt.events!) {
-      if (event.event === "CreatedEditions") {
+      if (event.event === "CreatedRewards") {
         contractAddress = event.args![4];
       }
     }
@@ -163,7 +163,7 @@ describe("MintableEditionsFactory", function () {
       [],
       store.address
     );
-    const editions = (await ethers.getContractAt("MintableEditions", await factory.get(0))) as MintableEditions;
+    const editions = (await ethers.getContractAt("MintableRewards", await factory.get(1))) as MintableRewards;
     await expect(await editions.royalties()).to.be.equal(0x0);
   });
 

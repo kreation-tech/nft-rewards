@@ -3,7 +3,7 @@
 import "@nomiclabs/hardhat-ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { RewardsNFT } from "../src/RewardsNFT";
-import { AllowancesStore, AllowancesStore__factory, MintableEditions, MintableEditionsFactory__factory } from "../src/types";
+import { AllowancesStore, AllowancesStore__factory, MintableRewards, MintableRewardsFactory__factory } from "../src/types";
 import { fail } from "assert";
 import { BigNumberish } from "ethers";
 
@@ -11,7 +11,7 @@ const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
 
 describe("On RewardsNFT", () => {
-	let hofa: RewardsNFT;
+	let facade: RewardsNFT;
 	let factoryAddress: string;
 	let storeAddress: string;
 	let deployer: SignerWithAddress;
@@ -22,17 +22,17 @@ describe("On RewardsNFT", () => {
 	let purchaser: SignerWithAddress;
 	let minter: SignerWithAddress;
 	let signer: SignerWithAddress;
-	let editions: MintableEditions;
+	let rewards: MintableRewards;
 	let store:AllowancesStore;
 
 	before(async () => {
 		[deployer, artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // test wallets
-		const { MintableEditionsFactory, AllowancesStore } = await deployments.fixture(["editions"]);
-		factoryAddress = MintableEditionsFactory.address;
+		const { MintableRewardsFactory, AllowancesStore } = await deployments.fixture(["rewards"]);
+		factoryAddress = MintableRewardsFactory.address;
 		storeAddress = AllowancesStore.address;
-		const factory = MintableEditionsFactory__factory.connect(factoryAddress, deployer);
+		const factory = MintableRewardsFactory__factory.connect(factoryAddress, deployer);
 		await factory.grantRole(await factory.ARTIST_ROLE(), artist.address);
-		hofa = new RewardsNFT(artist, factoryAddress);
+		facade = new RewardsNFT(artist, factoryAddress);
 		const info:RewardsNFT.Definition = {
 			info: {
 				name: "Emanuele",
@@ -48,7 +48,7 @@ describe("On RewardsNFT", () => {
 			shares: [{ holder: curator.address, bps: 100 }],
 			allowances: storeAddress
 		};
-		editions = (await hofa.create(info)).instance;
+		rewards = (await facade.create(info)).instance;
 		store = AllowancesStore__factory.connect(storeAddress, deployer);
 		const recipients = new Array<{ minter: string, amount: BigNumberish }>(0);
 		recipients.push({ minter: minter.address, amount: 10 });
@@ -73,10 +73,10 @@ describe("On RewardsNFT", () => {
 			allowances: storeAddress
 		};
 		// when
-		const response = (await hofa.create(info));
+		const response = (await facade.create(info));
 
 		// then
-		expect(response.id).to.be.equal(1);
+		expect(response.id).to.be.equal(2);
 		expect(response.address.length).to.be.equal(42);
 		const editions = response.instance;
 		expect(await editions.name()).to.be.equal("Emanuele");
@@ -96,7 +96,7 @@ describe("On RewardsNFT", () => {
 			allowances: storeAddress
 		};
 		// when
-		const editions = (await hofa.create(info)).instance;
+		const editions = (await facade.create(info)).instance;
 		// then
 		expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
 		expect(await editions.connect(artist).contentHash()).to.be.equal("0x6f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
@@ -108,8 +108,8 @@ describe("On RewardsNFT", () => {
 	});
 
 	it("Anyone can retrive info of a MeNFT", async () => {
-		const anyone = new RewardsNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address);
-		const nft = await (await anyone.get(0)).instance;
+		const anyone = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address);
+		const nft = await (await anyone.get(1)).instance;
 
 		await expect(await nft.name()).to.be.equal("Emanuele");
 		await expect(await nft.symbol()).to.be.equal("LELE");
@@ -121,15 +121,15 @@ describe("On RewardsNFT", () => {
 		await expect(await nft.royalties()).to.be.equal(250);
 	});
 	it("Artist can mint for self", async function () {
-		await expect(await hofa.mint(0)).to.be.equal(await editions.totalSupply()); // returns minted token id
-		await expect(await editions.balanceOf(artist.address)).to.be.equal(1); // token is transferred
-		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(artist.address); // token ownership has been updated
+		await expect(await facade.mint(1)).to.be.equal(await rewards.totalSupply()); // returns minted token id
+		await expect(await rewards.balanceOf(artist.address)).to.be.equal(1); // token is transferred
+		await expect(await rewards.ownerOf(await rewards.totalSupply())).to.be.equal(artist.address); // token ownership has been updated
 	});
 
 	it("Artist can mint multiple editions", async function () {
-		await expect(await hofa.mintMultiple(0, curator.address, 3)).to.be.equal(await editions.totalSupply()); // returns last minted token id
-		await expect(await editions.balanceOf(curator.address)).to.be.equal(3); // tokens are transferred
-		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(curator.address); // token ownership has been updated
+		await expect(await facade.mintMultiple(1, curator.address, 3)).to.be.equal(await rewards.totalSupply()); // returns last minted token id
+		await expect(await rewards.balanceOf(curator.address)).to.be.equal(3); // tokens are transferred
+		await expect(await rewards.ownerOf(await rewards.totalSupply())).to.be.equal(curator.address); // token ownership has been updated
 	});
 
 	it("Artist can mint for others", async function () {
@@ -137,53 +137,53 @@ describe("On RewardsNFT", () => {
 		for (let i = 0; i < recipients.length; i++) {
 			recipients[i] = receiver.address;
 		}
-		await expect(await hofa.mintAndTransfer(0, recipients)).to.be.equal(await editions.totalSupply()); // returns last minted token id
-		await expect(await editions.balanceOf(receiver.address)).to.be.equal(10); // tokens are transferred
-		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(receiver.address); // token ownership has been updated
+		await expect(await facade.mintAndTransfer(1, recipients)).to.be.equal(await rewards.totalSupply()); // returns last minted token id
+		await expect(await rewards.balanceOf(receiver.address)).to.be.equal(10); // tokens are transferred
+		await expect(await rewards.ownerOf(await rewards.totalSupply())).to.be.equal(receiver.address); // token ownership has been updated
 	});
 	it("None can mint if not authorized", async function () {
-		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
-		await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed");
+		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
+		await expect(buyer.mint(1)).to.be.revertedWith("Minting not allowed");
 	});
 	it("Anyone can mint if authorized", async function () {
-		const buyer = new RewardsNFT(minter, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
-		await expect(await buyer.mint(0)).to.be.equal(await editions.totalSupply());
-		await expect(await editions.balanceOf(minter.address)).to.be.equal(1); // token is transferred
-		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(minter.address); // token ownership has been updated
+		const buyer = new RewardsNFT(minter, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
+		await expect(await buyer.mint(1)).to.be.equal(await rewards.totalSupply());
+		await expect(await rewards.balanceOf(minter.address)).to.be.equal(1); // token is transferred
+		await expect(await rewards.ownerOf(await rewards.totalSupply())).to.be.equal(minter.address); // token ownership has been updated
 	});
 	it("Authorized minter with 0 allowance cannot mint", async function () {
-		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
-		await expect(buyer.mint(0)).to.be.revertedWith("Minting not allowed");
+		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
+		await expect(buyer.mint(1)).to.be.revertedWith("Minting not allowed");
 	});
 	it("Anyone is able to purchase an edition", async () => {
-		editions.connect(artist).setPrice(ethers.utils.parseEther("1.0")); // enables purchasing
+		rewards.connect(artist).setPrice(ethers.utils.parseEther("1.0")); // enables purchasing
 
-		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableEditionsFactory")).address); // create a façade for the buyer
+		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
 		const balance = await purchaser.getBalance(); // store balance before pourchase
 
-		await expect(await buyer.purchase(0))
-			.to.be.equal(await editions.totalSupply()); // acquire a token in exchange of money
+		await expect(await buyer.purchase(1))
+			.to.be.equal(await rewards.totalSupply()); // acquire a token in exchange of money
 
-		await expect(await editions.provider.getBalance(editions.address)).to.be.equal(ethers.utils.parseEther("1.0")); // money has been transferred
+		await expect(await rewards.provider.getBalance(rewards.address)).to.be.equal(ethers.utils.parseEther("1.0")); // money has been transferred
 		await expect((await purchaser.getBalance()).sub(balance))
 			.to.be.within(ethers.utils.parseEther("-1.001"), ethers.utils.parseEther("-1.0")); // money has been subtracted from purchaser (includes gas)
-		await expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(purchaser.address); // token has been transferred
+		await expect(await rewards.ownerOf(await rewards.totalSupply())).to.be.equal(purchaser.address); // token has been transferred
 	});
 	it("Anyone is able to verify if can mint an edition", async () => {
-		await expect(await hofa.isAllowedMinter(0, signer.address)).to.be.false;
-		await expect(await hofa.isAllowedMinter(0, minter.address)).to.be.true;
+		await expect(await facade.isAllowedMinter(1, signer.address)).to.be.false;
+		await expect(await facade.isAllowedMinter(1, minter.address)).to.be.true;
 
-		await expect(await hofa.isAllowedMinter(0, curator.address)).to.be.false;
-		await editions.allowPublic(true); // allows anyone
-		await expect(await hofa.isAllowedMinter(0, purchaser.address)).to.be.true;
-		await expect(await hofa.isAllowedMinter(0, receiver.address)).to.be.true;
-		await expect(await hofa.isAllowedMinter(0, curator.address)).to.be.true;
-		await expect(await hofa.isAllowedMinter(0, shareholder.address)).to.be.true;
+		await expect(await facade.isAllowedMinter(1, curator.address)).to.be.false;
+		await rewards.allowPublic(true); // allows anyone
+		await expect(await facade.isAllowedMinter(1, purchaser.address)).to.be.true;
+		await expect(await facade.isAllowedMinter(1, receiver.address)).to.be.true;
+		await expect(await facade.isAllowedMinter(1, curator.address)).to.be.true;
+		await expect(await facade.isAllowedMinter(1, shareholder.address)).to.be.true;
 	});
 
 	it("Deployer can grant/revoke artists", async () => {
-		hofa.grantArtist(signer.address).then(() => fail("Should have failed"), () => {});
-		hofa.revokeArtist(artist.address).then(() => fail("Should have failed"), () => {});
+		facade.grantArtist(signer.address).then(() => fail("Should have failed"), () => {});
+		facade.revokeArtist(artist.address).then(() => fail("Should have failed"), () => {});
 
 		const admin = new RewardsNFT(deployer, factoryAddress);
 		await expect(await admin.isArtist(signer.address)).to.be.false;
@@ -217,7 +217,7 @@ describe("On RewardsNFT", () => {
 			allowances: storeAddress
 		};
 		// when
-		const response = (await hofa.create(info));
+		const response = (await facade.create(info));
 		// then
 		const editions = response.instance;
 		expect(await editions.name()).to.be.equal("The \\\"Big\\\" Lele");
@@ -240,7 +240,7 @@ describe("On RewardsNFT", () => {
 			allowances: storeAddress
 		};
 		// when
-		const response = (await hofa.create(info));
+		const response = (await facade.create(info));
 		// then
 		const editions = response.instance;
 		expect(RewardsNFT.unescape(await editions.name())).to.be.equal("The \"Big\" Lele");

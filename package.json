@@ -22,7 +22,7 @@
     "test": "hardhat test --network hardhat --deploy-fixture",
     "build": "hardhat compile && tsc",
     "postbuild": "npm-prepare-dist && ts-node scripts/postbuild.ts",
-    "clean": "rm -rf dist",
+    "clean": "npx hardhat clean && rm -rf dist",
     "postversion": "git push && git push --tags"
   },
   "devDependencies": {

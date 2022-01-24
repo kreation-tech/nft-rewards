@@ -9,10 +9,10 @@ describe("Deployments", function () {
     const AllowancesStore = await ethers.getContractFactory("AllowancesStore");
     await AllowancesStore.deploy();
 
-    const MintableEditions = await ethers.getContractFactory("MintableEditions");
-    const editionsTemplate = await MintableEditions.deploy();
+    const MintableRewards = await ethers.getContractFactory("MintableRewards");
+    const editionsTemplate = await MintableRewards.deploy();
 
-    const MintableEditionsFactory = await ethers.getContractFactory("MintableEditionsFactory");
-    await MintableEditionsFactory.deploy(editionsTemplate.address);
+    const MintableRewardsFactory = await ethers.getContractFactory("MintableRewardsFactory");
+    await MintableRewardsFactory.deploy(editionsTemplate.address);
   });
 });

@@ -7,12 +7,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre;
   const { deploy, get } = deployments;
   const { deployer } = await getNamedAccounts();
-  await deploy("MintableEditions", {
+
+  const template = await get("MintableRewards");
+  await deploy("MintableRewardsFactory", {
     from: deployer,
-    log: true,
-    args: []
+    args: [template.address],
+    log: true
   });
 };
 export default func;
-func.dependencies = ["EditionsMetadataHelper"];
-func.tags = ["editions"];
+func.dependencies = ["MintableRewards"];
+func.tags = ["rewards"];

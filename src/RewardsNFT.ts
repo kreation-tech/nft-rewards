@@ -3,16 +3,16 @@
 /* eslint-disable no-redeclare */
 /* eslint-disable import/export */
 /**
- * ▒▄▀▄▒█▀▄░▀█▀▒██▀░█▄▒▄█░░░█▄░█▒█▀░▀█▀░░▒█▀▄▒██▀░█░░▒█▒▄▀▄▒█▀▄░█▀▄░▄▀▀
- * ░█▀█░█▀▄░▒█▒░█▄▄░█▒▀▒█▒░░█▒▀█░█▀░▒█▒▒░░█▀▄░█▄▄░▀▄▀▄▀░█▀█░█▀▄▒█▄▀▒▄██
+ * ░█▄ █▒█▀░▀█▀  ▒█▀▄▒██▀░█ ░▒█▒▄▀▄▒█▀▄░█▀▄░▄▀▀
+ * ░█▒▀█░█▀ ▒█▒▒░░█▀▄░█▄▄░▀▄▀▄▀░█▀█░█▀▄▒█▄▀▒▄██
  *
  * Made with 🧡 by www.Kreation.tech
  */
 import { Provider } from "@ethersproject/providers";
 import { Signer } from "@ethersproject/abstract-signer";
 // eslint-disable-next-line camelcase
-import { MintableEditionsFactory__factory, MintableEditions__factory, AllowancesStore__factory } from "./types";
-import type { MintableEditionsFactory, MintableEditions, AllowancesStore } from "./types";
+import { MintableRewardsFactory__factory, MintableRewards__factory, AllowancesStore__factory } from "./types";
+import type { MintableRewardsFactory, MintableRewards, AllowancesStore } from "./types";
 import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
 import addresses from "./addresses.json";
 import roles from "./roles.json";
@@ -48,7 +48,7 @@ export declare namespace RewardsNFT {
 
 export class RewardsNFT {
 	private signerOrProvider: Signer | Provider;
-	public readonly factory: MintableEditionsFactory;
+	public readonly factory: MintableRewardsFactory;
 	public address:string;
 	public store?:AllowancesStore;
 	public roles:{[key: string]: string} = roles;
@@ -59,12 +59,12 @@ export class RewardsNFT {
 			// load Factory contract
 			const contracts:{[key: string]: string} = (addresses as {[key: string]: {[name: string]: string}})[factoryAddressOrChainId.toString()];
 			if (!contracts) throw new Error("Unknown chain with id " + factoryAddressOrChainId);
-			this.address = contracts.MintableEditionsFactory;
-			this.factory = MintableEditionsFactory__factory.connect(this.address, signerOrProvider);
+			this.address = contracts.MintableRewardsFactory;
+			this.factory = MintableRewardsFactory__factory.connect(this.address, signerOrProvider);
 			this.store = AllowancesStore__factory.connect(contracts.AllowancesStore, signerOrProvider);
 		} else {
 			this.address = factoryAddressOrChainId;
-			this.factory = MintableEditionsFactory__factory.connect(factoryAddressOrChainId as string, signerOrProvider);
+			this.factory = MintableRewardsFactory__factory.connect(factoryAddressOrChainId as string, signerOrProvider);
 		}
 		if (storeAddress) {
 			this.store = AllowancesStore__factory.connect(storeAddress, signerOrProvider);
@@ -104,7 +104,7 @@ export class RewardsNFT {
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
 	 * @param callback a callback function reporting received confirmations
 	 */
-	public async create(props:RewardsNFT.Definition, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<{id:BigNumber, address:string, instance:MintableEditions}> {
+	public async create(props:RewardsNFT.Definition, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<{id:BigNumber, address:string, instance:MintableRewards}> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const tx = await this.factory
@@ -122,11 +122,11 @@ export class RewardsNFT {
 					receipt = await tx.wait(received++);
 				}
 				for (const log of receipt.events!) {
-					if (log.event === "CreatedEditions") {
+					if (log.event === "CreatedRewards") {
 						resolve({
 							id: log.args![0],
 							address: log.args![4] as string,
-							instance: MintableEditions__factory.connect(log.args![4], this.signerOrProvider)
+							instance: MintableRewards__factory.connect(log.args![4], this.signerOrProvider)
 						});
 					}
 				}
@@ -146,7 +146,7 @@ export class RewardsNFT {
 	public async purchase(id:BigNumberish, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<BigNumber> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
+				const edition = MintableRewards__factory.connect(await this.factory.get(id), this.signerOrProvider);
 				const price = await edition.price();
 				if (price.gt(0)) {
 					const tx = await edition.purchase({ value: price });
@@ -180,7 +180,7 @@ export class RewardsNFT {
 	public async mint(id:BigNumberish, confirmations:number = 1, callback?:(received:number, requested:number) => void):Promise<BigNumber> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
+				const edition = MintableRewards__factory.connect(await this.factory.get(id), this.signerOrProvider);
 				const tx = await edition.mint();
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
@@ -243,7 +243,7 @@ export class RewardsNFT {
 	public async mintMultiple(id:BigNumberish, receiver: string, count:number, confirmations:number = 1, callback?:(received:number, requested:number) => void):Promise<BigNumber> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
+				const edition = MintableRewards__factory.connect(await this.factory.get(id), this.signerOrProvider);
 				const addresses: Array<string> = [];
 				for (let i = 0; i < count; i++) {
 					addresses.push(receiver);
@@ -287,7 +287,7 @@ export class RewardsNFT {
 		}
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const edition = MintableEditions__factory.connect(await this.factory.get(id), this.signerOrProvider);
+				const edition = MintableRewards__factory.connect(await this.factory.get(id), this.signerOrProvider);
 				const tx = await edition.mintAndTransfer(addresses);
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
@@ -314,12 +314,12 @@ export class RewardsNFT {
 	 *
 	 * @param id the EdNFT identifier
 	 */
-	public async get(id: BigNumberish): Promise<{address:string, instance:MintableEditions}> {
+	public async get(id: BigNumberish): Promise<{address:string, instance:MintableRewards}> {
 		return new Promise((resolve) => {
 			this.factory.get(id).then((address) => {
 				resolve({
 					address: address,
-					instance: MintableEditions__factory.connect(address, this.signerOrProvider).connect(this.signerOrProvider)
+					instance: MintableRewards__factory.connect(address, this.signerOrProvider).connect(this.signerOrProvider)
 				});
 			});
 		});
@@ -387,13 +387,8 @@ export class RewardsNFT {
 		return new Promise((resolve, reject) => { (async() => {
 			if (!this.store) reject(new Error("Undefined store"));
 			try {
-				const count = await this.store!.length();
-				const response = new Array<RewardsNFT.Allowance>(count.toNumber());
-				for (let index = 0; index < response.length; index++) {
-					const addr = await this.store!.minters(index);
-					response.push({ minter: addr, amount: await this.store!.allowances(addr) });
-				}
-				resolve(response);
+				resolve((await this.store!.list())
+					.map(it => ({ minter: it.minter, amount: it.amount } as RewardsNFT.Allowance)));
 			} catch (err) {
 				reject(err);
 			}
