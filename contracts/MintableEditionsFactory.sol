@@ -8,38 +8,44 @@
  */
 pragma solidity ^0.8.9;
 
-import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {CountersUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {BeaconProxy} from "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import {UpgradeableBeacon} from "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
 import "./MintableEditions.sol";
 
-contract MintableEditionsFactory is AccessControl {
-    bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
+contract MintableEditionsFactory is AccessControlUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
+    bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
+    
+    // Address for implementation contract to clone
+    UpgradeableBeacon public immutable beacon;
+
+    // Store for hash codes of editions contents: used to prevent re-issuing of the same content
+    mapping(bytes32 => bool) internal _contents;
 
     // Counter for current contract id
     CountersUpgradeable.Counter internal _counter;
 
-    // Address for implementation of Edition contract to clone
-    address private _implementation;
-
-    // Store for hash codes of editions contents: used to prevent re-issuing of the same content
-    mapping(bytes32 => bool) private _contents;
+    // Store for editions addresses
+    mapping(uint256 => address) internal _editions;
 
     /**
      * Initializes the factory with the address of the implementation contract template
      * 
-     * @param implementation Edition implementation contract to clone
+     * @param implementation implementation contract to clone
      */
     constructor(address implementation) {
-        _implementation = implementation;
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ARTIST_ROLE, msg.sender);
+        UpgradeableBeacon _tokenBeacon = new UpgradeableBeacon(implementation);
+        //_tokenBeacon.transferOwnership(_msgSender());
+        beacon = _tokenBeacon;
+        _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _grantRole(ARTIST_ROLE, _msgSender());
     }
 
-    function setImplementation(address implementation) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _implementation = implementation;
+    function upgradeTo(address implementation) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        beacon.upgradeTo(implementation);
     }
 
     /**
@@ -65,12 +71,14 @@ contract MintableEditionsFactory is AccessControl {
     ) external onlyRole(ARTIST_ROLE) returns (address) {
         require(!_contents[info.contentHash], "Duplicated content");
         _contents[info.contentHash] = true;
-        uint256 id = _counter.current();
-        address instance = Clones.cloneDeterministic(_implementation, bytes32(abi.encodePacked(id)));
-        MintableEditions(instance).initialize(msg.sender, info, size, price, royalties, shares, allowancesRef);
-        emit CreatedEditions(id, msg.sender, shares, size, instance);
+        BeaconProxy proxy = new BeaconProxy(
+            address(beacon), 
+            abi.encodeWithSelector(MintableEditions(address(0x0)).initialize.selector, _msgSender(), info, size, price, royalties, shares, allowancesRef)
+        );
         _counter.increment();
-        return instance;
+        _editions[_counter.current()] = address(proxy);
+        emit CreatedEditions(_counter.current(), msg.sender, shares, size, address(proxy));
+        return address(proxy);
     }
 
     /**
@@ -79,14 +87,15 @@ contract MintableEditionsFactory is AccessControl {
      * @param index zero-based index of editions contract to retrieve
      * @return the editions contract
      */
-    function get(uint256 index) external view returns (MintableEditions) {
-        return MintableEditions(Clones.predictDeterministicAddress(_implementation, bytes32(abi.encodePacked(index)), address(this)));
+    function get(uint256 index) external view returns (address) {
+        require(editionId <= _counter.current(), "EdNFT doesn't exist");
+        return _editions[editionId];
     }
 
     /** 
      * @return the number of edition contracts created so far through this factory
      */
-     function instances() external view returns (uint256) {
+    function instances() external view returns (uint256) {
         return _counter.current();
     }
 

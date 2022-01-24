@@ -428,7 +428,7 @@ describe("MintableEditions", function () {
       .to.be.deep.equal([artist.address, ethers.utils.parseEther("0.015")]);
   });
 
-  it.only("Supports airdrop", async function () {
+  it("Supports airdrop", async function () {
     const recipients = new Array<{ minter: string, amount: BigNumberish }>(500);
     for (let i = 0; i < recipients.length; i++) {
       recipients[i] = { minter: ethers.Wallet.createRandom().address, amount: 1 };
@@ -439,8 +439,8 @@ describe("MintableEditions", function () {
     expect(await editions.totalSupply()).to.be.equal(await store.totalAllowed());
     expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(await store.minters((await store.length()).sub(1)));
 
-    //await editions.airdrop(0, 300);
-    //await editions.airdrop(300, 600);
+    await editions.airdrop(0, 300);
+    await editions.airdrop(300, 600);
     expect(await editions.totalSupply()).to.be.equal(await store.totalAllowed());
   });
 });
