@@ -30,10 +30,10 @@ contract AllowancesStore is AccessControlUpgradeable {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
     
-    function updateAllowances(Allowance[] memory _allowances) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function update(Allowance[] memory _allowances) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint i = 0; i < _allowances.length; i++) {
             if (_allowances[i].amount != 0 && allowances[_allowances[i].minter] == 0) {
-                minters.push(_allowances[i].minter);
+                //minters.push(_allowances[i].minter);
             }
             allowances[_allowances[i].minter] = _allowances[i].amount;
         }
@@ -47,7 +47,7 @@ contract AllowancesStore is AccessControlUpgradeable {
         return _allowed;
     }
 
-    function count() public view returns (uint256) {
+    function length() public view returns (uint256) {
         return minters.length;
     }
 }

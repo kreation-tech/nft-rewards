@@ -38,7 +38,7 @@ describe("MintableEditionsFactory", function () {
     recipients.push({ minter: deployer.address, amount: 50 });
     recipients.push({ minter: shareholder.address, amount: 100 });
     store = (await ethers.getContractAt("AllowancesStore", AllowancesStore.address)) as AllowancesStore;
-    await store.updateAllowances(recipients);
+    await store.update(recipients);
   });
 
   it("Should emit a CreatedEditions event upon create", async function () {

@@ -33,7 +33,7 @@ describe("MintableEditions", function () {
     const { MintableEditionsFactory, AllowancesStore } = await deployments.fixture(["editions"]);
     factory = (await ethers.getContractAt("MintableEditionsFactory", MintableEditionsFactory.address)) as MintableEditionsFactory;
     store = (await ethers.getContractAt("AllowancesStore", AllowancesStore.address)) as AllowancesStore;
-    await store.updateAllowances(recipients);
+    //await store.update(recipients);
     const receipt = await (await factory.connect(artist).create(
       {
         name: "Roberto Lo Giacco",
@@ -135,11 +135,11 @@ describe("MintableEditions", function () {
   });
 
    it("Revoked minters cannot mint for self or others", async function () {
-    await store.updateAllowances([{ minter: minter.address, amount: 50 }]);
+    await store.update([{ minter: minter.address, amount: 50 }]);
     await expect(editions.connect(minter).mint()).to.emit(editions, "Transfer");
     await expect(await editions.totalSupply()).to.be.equal(1);
 
-    await store.updateAllowances([{ minter: minter.address, amount: 0 }]);
+    await store.update([{ minter: minter.address, amount: 0 }]);
     await expect(editions.connect(minter).mint()).to.be.revertedWith("Minting not allowed");
     await expect(editions.connect(minter).mintAndTransfer([receiver.address])).to.be.revertedWith("Minting not allowed");
     await expect(await editions.totalSupply()).to.be.equal(1);
@@ -428,19 +428,19 @@ describe("MintableEditions", function () {
       .to.be.deep.equal([artist.address, ethers.utils.parseEther("0.015")]);
   });
 
-  it("Supports airdrop", async function () {
+  it.only("Supports airdrop", async function () {
     const recipients = new Array<{ minter: string, amount: BigNumberish }>(500);
     for (let i = 0; i < recipients.length; i++) {
       recipients[i] = { minter: ethers.Wallet.createRandom().address, amount: 1 };
     }
-    await store.updateAllowances(recipients);
-    await editions.airdrop(0, 300);
-    await editions.airdrop(300, 600);
+    await store.update(recipients);
+    await editions.airdrop(0, 250);
+    await editions.airdrop(250, 505);
     expect(await editions.totalSupply()).to.be.equal(await store.totalAllowed());
-    expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(await store.minters((await store.count()).sub(1)));
+    expect(await editions.ownerOf(await editions.totalSupply())).to.be.equal(await store.minters((await store.length()).sub(1)));
 
-    await editions.airdrop(0, 300);
-    await editions.airdrop(300, 600);
+    //await editions.airdrop(0, 300);
+    //await editions.airdrop(300, 600);
     expect(await editions.totalSupply()).to.be.equal(await store.totalAllowed());
   });
 });

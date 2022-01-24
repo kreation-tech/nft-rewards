@@ -11,8 +11,8 @@
 import { Provider } from "@ethersproject/providers";
 import { Signer } from "@ethersproject/abstract-signer";
 // eslint-disable-next-line camelcase
-import { MintableEditionsFactory__factory, MintableEditions__factory } from "./types";
-import type { MintableEditionsFactory, MintableEditions } from "./types";
+import { MintableEditionsFactory__factory, MintableEditions__factory, AllowancesStore__factory } from "./types";
+import type { MintableEditionsFactory, MintableEditions, AllowancesStore } from "./types";
 import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
 import addresses from "./addresses.json";
 import roles from "./roles.json";
@@ -50,9 +50,10 @@ export class RewardsNFT {
 	private signerOrProvider: Signer | Provider;
 	public readonly factory: MintableEditionsFactory;
 	public address:string;
+	public store?:AllowancesStore;
 	public roles:{[key: string]: string} = roles;
 
-	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number) {
+	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number, storeAddress?: string) {
 		this.signerOrProvider = signerOrProvider;
 		if (typeof (factoryAddressOrChainId) !== "string") {
 			// load Factory contract
@@ -60,9 +61,13 @@ export class RewardsNFT {
 			if (!contracts) throw new Error("Unknown chain with id " + factoryAddressOrChainId);
 			this.address = contracts.MintableEditionsFactory;
 			this.factory = MintableEditionsFactory__factory.connect(this.address, signerOrProvider);
+			this.store = AllowancesStore__factory.connect(contracts.AllowancesStore, signerOrProvider);
 		} else {
 			this.address = factoryAddressOrChainId;
 			this.factory = MintableEditionsFactory__factory.connect(factoryAddressOrChainId as string, signerOrProvider);
+		}
+		if (storeAddress) {
+			this.store = AllowancesStore__factory.connect(storeAddress, signerOrProvider);
 		}
 	}
 
@@ -343,6 +348,52 @@ export class RewardsNFT {
 					await edition.owner() === address ||
 					await edition.allowanceOf(address || await (this.signerOrProvider as Signer).getAddress()) > 0 ||
 					await edition.allowanceOf(ethers.constants.AddressZero) > 0);
+			} catch (err) {
+				reject(err);
+			}
+		})(); });
+	}
+
+	public async updateAllowances(allowances:RewardsNFT.Allowance[], confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		return new Promise((resolve, reject) => { (async() => {
+			if (!this.store) reject(new Error("Undefined store"));
+			try {
+				const tx = await this.store!.update(allowances);
+				let received = tx.confirmations;
+				await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					await tx.wait(received++);
+				}
+				resolve(true);
+			} catch (err) {
+				reject(err);
+			}
+		})(); });
+	}
+
+	public async requiredAllowance(): Promise<BigNumberish> {
+		return new Promise((resolve, reject) => { (async() => {
+			if (!this.store) reject(new Error("Undefined store"));
+			try {
+				resolve(await this.store!.totalAllowed());
+			} catch (err) {
+				reject(err);
+			}
+		})(); });
+	}
+
+	public async listAllowances(): Promise<RewardsNFT.Allowance[]> {
+		return new Promise((resolve, reject) => { (async() => {
+			if (!this.store) reject(new Error("Undefined store"));
+			try {
+				const count = await this.store!.length();
+				const response = new Array<RewardsNFT.Allowance>(count.toNumber());
+				for (let index = 0; index < response.length; index++) {
+					const addr = await this.store!.minters(index);
+					response.push({ minter: addr, amount: await this.store!.allowances(addr) });
+				}
+				resolve(response);
 			} catch (err) {
 				reject(err);
 			}

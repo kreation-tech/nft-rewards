@@ -317,7 +317,7 @@ contract MintableEditions is ERC721Upgradeable, IERC2981Upgradeable, IMintableEd
 
     function airdrop(uint256 start, uint256 end) external returns (uint256) {
         require(uint64(mintable()) >= AllowancesStore(allowancesRef).totalAllowed(), "Sold out");
-        uint256 _endAt = end < AllowancesStore(allowancesRef).count() ? end : AllowancesStore(allowancesRef).count();
+        uint256 _endAt = end < AllowancesStore(allowancesRef).length() ? end : AllowancesStore(allowancesRef).length();
         for (uint i = start; i < _endAt; i++) {
             address recipient = AllowancesStore(allowancesRef).minters(i);
             uint16 allowance = AllowancesStore(allowancesRef).allowances(recipient) - allowedMinters[recipient];

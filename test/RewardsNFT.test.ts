@@ -52,7 +52,7 @@ describe("On RewardsNFT", () => {
 		store = AllowancesStore__factory.connect(storeAddress, deployer);
 		const recipients = new Array<{ minter: string, amount: BigNumberish }>(0);
 		recipients.push({ minter: minter.address, amount: 10 });
-		await store.updateAllowances(recipients);
+		await store.update(recipients);
 	});
 
 	it("Artists can create a RewardsNFT", async function() {
