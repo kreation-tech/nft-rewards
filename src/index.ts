@@ -1,2 +1,3 @@
 /* eslint-disable node/no-missing-import */
-export type { MintableEditions, MintableEditionsFactory, ReceiversHolder } from "./types";
+export { RewardsNFT } from "./RewardsNFT";
+export type { MintableRewards, MintableRewardsFactory, AllowancesStore } from "./types";
