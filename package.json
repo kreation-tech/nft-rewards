@@ -1,7 +1,7 @@
 {
-  "name": "@kreation.tech/artem-rewards",
-  "version": "1.0.0",
-  "description": "ARTEM NFT Rewards Contracts",
+  "name": "@kreation.tech/nft-rewards",
+  "version": "0.9.0",
+  "description": "NFT Rewards Contracts",
   "author": "AgileWare",
   "license": "MIT",
   "private": false,
@@ -9,12 +9,12 @@
   "typings": "./index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kreation-tech/artem-rewards.git"
+    "url": "git+https://github.com/agileware-org/nft-rewards.git"
   },
   "bugs": {
-    "url": "https://github.com/kreation-tech/artem-rewards/issues"
+    "url": "https://github.com/agileware-org/nft-rewards/issues"
   },
-  "homepage": "https://github.com/kreation-tech/artem-rewards#readme",
+  "homepage": "https://github.com/agileware-org/nft-rewards#readme",
   "scripts": {
     "compile": "hardhat compile",
     "deploy": "hardhat deploy && hardhat run scripts/deploy.ts",
@@ -23,7 +23,8 @@
     "build": "hardhat compile && tsc",
     "postbuild": "npm-prepare-dist && ts-node scripts/postbuild.ts",
     "clean": "npx hardhat clean && rm -rf dist",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "publish": "cd dist && npm publish --access public"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
