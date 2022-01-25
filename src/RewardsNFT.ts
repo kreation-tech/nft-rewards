@@ -20,6 +20,7 @@ import roles from "./roles.json";
 import { ethers } from "ethers";
 
 export declare namespace RewardsNFT {
+	// eslint-disable-next-line no-unused-vars
 	interface Allowance {
 		minter: string;
 		amount: number
@@ -30,7 +31,6 @@ export declare namespace RewardsNFT {
 		info: {
 			name:string,
 			symbol:string,
-			description:string,
 			contentUrl:string,
 			contentHash: string,
 			metadataUrl:string
@@ -42,7 +42,7 @@ export declare namespace RewardsNFT {
 			holder: string;
 			bps: number
 		}[],
-		allowances: string
+		allowances?: string
 	}
 }
 
@@ -97,6 +97,23 @@ export class RewardsNFT {
 		return JSON.parse("\"" + value + "\"");
 	}
 
+	public async metadata(title:string, description:string, uri:string, hash:string, thumbnail?:string): Promise<string> {
+		return new Promise((resolve, reject) => {
+			(this.signerOrProvider as Signer).getAddress().then((address) => {
+				const metadata = {
+					name: title,
+					description: description,
+					image: (thumbnail || uri),
+					animation_url: thumbnail ? uri : undefined,
+					properties: {
+						sha256: hash
+					}
+				};
+				resolve(JSON.stringify(metadata));
+			});
+		});
+	}
+
 	/**
 	 * Creates a new EdNFT
 	 *
@@ -105,6 +122,9 @@ export class RewardsNFT {
 	 * @param callback a callback function reporting received confirmations
 	 */
 	public async create(props:RewardsNFT.Definition, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<{id:BigNumber, address:string, instance:MintableRewards}> {
+		if (!props.allowances && !this.store) {
+			throw new Error("Allowances store address required");
+		}
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const tx = await this.factory
@@ -114,7 +134,7 @@ export class RewardsNFT {
 						contentUrl: RewardsNFT.escape(props.info.contentUrl),
 						contentHash: props.info.contentHash,
 						metadataUrl: RewardsNFT.escape(props.info.metadataUrl)
-					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], props.allowances);
+					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], props.allowances || this.store!.address);
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
 				while (received < confirmations) {
@@ -372,7 +392,7 @@ export class RewardsNFT {
 		})(); });
 	}
 
-	public async requiredAllowance(): Promise<BigNumberish> {
+	public async requiredAllowances(): Promise<BigNumberish> {
 		return new Promise((resolve, reject) => { (async() => {
 			if (!this.store) reject(new Error("Undefined store"));
 			try {
@@ -427,7 +447,7 @@ export class RewardsNFT {
 	}
 
 	/**
-	 * Grants artist permissions to an address
+	 * Grants admin permissions to an address
 	 *
 	 * @param address the address to grant
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
@@ -438,7 +458,36 @@ export class RewardsNFT {
 	}
 
 	/**
-	 * Revokes artist permissions from an address
+	 * Grants admin permissions on the store to an address
+	 *
+	 * @param address the address to grant
+	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 * @param callback a callback function reporting received confirmations
+	 */
+	public async grantStoreAdmin(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		return new Promise((resolve, reject) => { (async() => {
+			try {
+				const tx = await this.store!.grantRole(roles.admin, address);
+				let received = tx.confirmations;
+				let receipt = await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					receipt = await tx.wait(received++);
+				}
+				for (const log of receipt.events!) {
+					if (log.event === "RoleGranted") {
+						resolve(true);
+					}
+				}
+				resolve(false);
+			} catch (err) {
+				reject(err);
+			}
+		})(); });
+	}
+
+	/**
+	 * Revokes admin permissions from an address
 	 *
 	 * @param address the address to revoke
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
@@ -449,12 +498,56 @@ export class RewardsNFT {
 	}
 
 	/**
+	 * Revokes admin permissions on the store from an address
+	 *
+	 * @param address the address to revoke
+	 * @param confirmations the number of confirmations to wait for, deafults to 1
+	 * @param callback a callback function reporting received confirmations
+	 */
+	public async revokeStoreAdmin(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		return new Promise((resolve, reject) => { (async() => {
+			try {
+				const tx = await this.store!.revokeRole(roles.admin, address);
+				let received = tx.confirmations;
+				let receipt = await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					receipt = await tx.wait(received++);
+				}
+				for (const log of receipt.events!) {
+					if (log.event === "RoleRevoked") {
+						resolve(true);
+					}
+				}
+				resolve(false);
+			} catch (err) {
+				reject(err);
+			}
+		})(); });
+	}
+
+	/**
 	 * Checks if an address is listed as admin
 	 *
 	 * @param address the address to check, defaults to current signer
 	 */
 	public async isAdmin(address?:string): Promise<boolean> {
 		return this._hasRole(roles.admin, address);
+	}
+
+	/**
+	 * Checks if an address is listed as store admin
+	 *
+	 * @param address the address to check, defaults to current signer
+	 */
+	public async isStoreAdmin(address?:string): Promise<boolean> {
+		return new Promise((resolve, reject) => { (async() => {
+			try {
+				resolve(this.store!.hasRole(roles.admin, address || await (this.signerOrProvider as Signer).getAddress()));
+			} catch (err) {
+				reject(err);
+			}
+		})(); });
 	}
 
 	/**
