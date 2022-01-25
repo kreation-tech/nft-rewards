@@ -1,6 +1,6 @@
 {
   "name": "@kreation.tech/nft-rewards",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "NFT Rewards Contracts",
   "author": "AgileWare",
   "license": "MIT",
@@ -9,12 +9,12 @@
   "typings": "./index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agileware-org/nft-rewards.git"
+    "url": "git+https://github.com/kreation-tech/nft-rewards.git"
   },
   "bugs": {
-    "url": "https://github.com/agileware-org/nft-rewards/issues"
+    "url": "https://github.com/kreation-tech/nft-rewards/issues"
   },
-  "homepage": "https://github.com/agileware-org/nft-rewards#readme",
+  "homepage": "https://github.com/kreation-tech/nft-rewards#readme",
   "scripts": {
     "compile": "hardhat compile",
     "deploy": "hardhat deploy && hardhat run scripts/deploy.ts",
