@@ -27,9 +27,9 @@ describe("On RewardsNFT", () => {
 
 	before(async () => {
 		[deployer, artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // test wallets
-		const { MintableRewardsFactory, AllowancesStore } = await deployments.fixture(["rewards"]);
+		const { MintableRewardsFactory, ArtemStakingRewards } = await deployments.fixture(["rewards"]);
 		factoryAddress = MintableRewardsFactory.address;
-		storeAddress = AllowancesStore.address;
+		storeAddress = ArtemStakingRewards.address;
 		const factory = MintableRewardsFactory__factory.connect(factoryAddress, deployer);
 		await factory.grantRole(await factory.ARTIST_ROLE(), artist.address);
 		facade = new RewardsNFT(artist, factoryAddress);
@@ -37,7 +37,6 @@ describe("On RewardsNFT", () => {
 			info: {
 				name: "Emanuele",
 				symbol: "LELE",
-				description: "My very first MeNFT",
 				contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
 				contentHash: "0x1f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
 				metadataUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu"
@@ -61,7 +60,6 @@ describe("On RewardsNFT", () => {
 			info: {
 				name: "Emanuele",
 				symbol: "LELE",
-				description: "My very first MeNFT",
 				contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
 				contentHash: "0x5f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
 				metadataUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu"
@@ -88,7 +86,6 @@ describe("On RewardsNFT", () => {
 			info: {
 				name: "Emanuele",
 				symbol: "LELE",
-				description: "My very first MeNFT",
 				contentUrl: "ipfs://bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
 				contentHash: "0x6f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
 				metadataUrl: "ipfs://bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu"
@@ -207,8 +204,6 @@ describe("On RewardsNFT", () => {
 				// eslint-disable-next-line quotes
 				name: 'The "Big" Lele',
 				symbol: "LE\\LE",
-				// eslint-disable-next-line quotes
-				description: 'This "is" something\nneeding \\/ escaping',
 				contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
 				contentHash: "0x2f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
 				metadataUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu"
@@ -232,7 +227,6 @@ describe("On RewardsNFT", () => {
 			info: {
 				name: "The \"Big\" Lele",
 				symbol: "LE\\LE",
-				description: "This \"is\" something\tneeding \\/ escaping",
 				contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
 				contentHash: "0x3f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
 				metadataUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu"

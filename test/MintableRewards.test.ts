@@ -30,9 +30,9 @@ describe("MintableRewards", function () {
   });
 
   beforeEach(async () => {
-    const { MintableRewardsFactory, AllowancesStore } = await deployments.fixture(["rewards"]);
+    const { MintableRewardsFactory, ArtemStakingRewards } = await deployments.fixture(["rewards"]);
     factory = (await ethers.getContractAt("MintableRewardsFactory", MintableRewardsFactory.address)) as MintableRewardsFactory;
-    store = (await ethers.getContractAt("AllowancesStore", AllowancesStore.address)) as AllowancesStore;
+    store = (await ethers.getContractAt("AllowancesStore", ArtemStakingRewards.address)) as AllowancesStore;
     await store.update(recipients);
     const receipt = await (await factory.connect(artist).create(
       {
