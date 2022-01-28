@@ -10,11 +10,12 @@ pragma solidity ^0.8.9;
 
 
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 /**
  * Holds receivers addresses and allowances
  */
-contract AllowancesStore is AccessControlUpgradeable {
+contract AllowancesStore is AccessControlUpgradeable, UUPSUpgradeable {
     struct Allowance {
         address minter;
         uint16 amount;
@@ -29,6 +30,8 @@ contract AllowancesStore is AccessControlUpgradeable {
     function initialize() public initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
+
+    function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
     
     function update(Allowance[] memory _allowances) external onlyRole(DEFAULT_ADMIN_ROLE) {
         for (uint i = 0; i < _allowances.length; i++) {
