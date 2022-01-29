@@ -11,7 +11,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const proxy = await deployments.get("AllowancesStore");
     const upgrade = await upgrades.upgradeProxy(proxy.address, await hre.ethers.getContractFactory("AllowancesStore"));
     // eslint-disable-next-line quotes
-    console.log('upgraded proxied contract "AllowancesStore" to impl at ' + await upgrades.erc1967.getImplementationAddress(upgrade.address));
+    console.log(`upgraded proxied contract "AllowancesStore" at ${proxy.address} to impl ${await upgrades.erc1967.getImplementationAddress(upgrade.address)}`);
   } catch (err) {
     const factory = await hre.ethers.getContractFactory("AllowancesStore");
     const instance = await upgrades.deployProxy(factory, []);
@@ -26,7 +26,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       address: await upgrades.erc1967.getImplementationAddress(instance.address)
     });
     // eslint-disable-next-line quotes
-    console.log('deployed proxied contract "AllowancesStore" at ' + instance.address);
+    console.log(`deployed proxied contract "AllowancesStore" at ${instance.address}`);
   }
 };
 export default func;

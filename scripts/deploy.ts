@@ -16,7 +16,6 @@ async function main() {
   const addresses = JSON.parse(readFileSync("./src/addresses.json", "utf-8"));
   addresses[await getChainId()] = contracts;
 
-  await addressOf("AllowancesStore");
   await addressOf("MintableRewards");
   await addressOf("MintableRewardsFactory");
   writeFileSync("./src/addresses.json", JSON.stringify(addresses, null, 2), { encoding: "utf-8" });

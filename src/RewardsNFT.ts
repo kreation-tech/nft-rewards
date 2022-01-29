@@ -55,19 +55,18 @@ export class RewardsNFT {
 
 	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number, storeAddress?: string) {
 		this.signerOrProvider = signerOrProvider;
+		if (!storeAddress) throw new Error("Undefined store");
 		if (typeof (factoryAddressOrChainId) !== "string") {
 			// load Factory contract
 			const contracts:{[key: string]: string} = (addresses as {[key: string]: {[name: string]: string}})[factoryAddressOrChainId.toString()];
 			if (!contracts) throw new Error("Unknown chain with id " + factoryAddressOrChainId);
 			this.address = contracts.MintableRewardsFactory;
 			this.factory = MintableRewardsFactory__factory.connect(this.address, signerOrProvider);
-			this.store = AllowancesStore__factory.connect(storeAddress || contracts.AllowancesStore, signerOrProvider);
 		} else {
-			if (!storeAddress) throw new Error("Undefined store");
 			this.address = factoryAddressOrChainId;
 			this.factory = MintableRewardsFactory__factory.connect(factoryAddressOrChainId as string, signerOrProvider);
-			this.store = AllowancesStore__factory.connect(storeAddress, signerOrProvider);
 		}
+		this.store = AllowancesStore__factory.connect(storeAddress, signerOrProvider);
 	}
 
 	/**
