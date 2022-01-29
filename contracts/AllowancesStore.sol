@@ -42,6 +42,15 @@ contract AllowancesStore is AccessControlUpgradeable, UUPSUpgradeable {
         }
     }
 
+    function updateTo(address[] memory _receivers, uint16 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint i = 0; i < _receivers.length; i++) {
+            if (amount != 0 && allowances[_receivers[i]] == 0) {
+                minters.push(_receivers[i]);
+            }
+            allowances[_receivers[i]] = amount;
+        }
+    }
+
     function totalAllowed() public view returns (uint64) {
         uint64 _allowed = 0;
         for (uint i = 0; i < minters.length; i++) {

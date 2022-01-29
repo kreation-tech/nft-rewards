@@ -16,7 +16,7 @@ async function verify(contract:string, args: any[]) {
 }
 
 async function main() {
-  await verify("ArtemStakingRewardsImpl", []);
+  await verify("AllowancesStoreImpl", []);
   await verify("MintableRewards", []);
   await verify("MintableRewardsFactory", [await (await get("MintableRewards")).address]);
 }

@@ -1,5 +1,5 @@
 {
-  "address": "0x270BCf20322A782CDC111c35c4D8Bc44b5e14441",
+  "address": "0x63f902cfB8F32c9141C001462A10CeDD2f9C2834",
   "abi": [
     {
       "inputs": [],
@@ -372,6 +372,24 @@
         }
       ],
       "name": "update",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "_receivers",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint16",
+          "name": "amount",
+          "type": "uint16"
+        }
+      ],
+      "name": "updateTo",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

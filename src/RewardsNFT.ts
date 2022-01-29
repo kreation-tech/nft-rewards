@@ -50,7 +50,7 @@ export class RewardsNFT {
 	private signerOrProvider: Signer | Provider;
 	public readonly factory: MintableRewardsFactory;
 	public address:string;
-	public store?:AllowancesStore;
+	public store:AllowancesStore;
 	public roles:{[key: string]: string} = roles;
 
 	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number, storeAddress?: string) {
@@ -61,12 +61,11 @@ export class RewardsNFT {
 			if (!contracts) throw new Error("Unknown chain with id " + factoryAddressOrChainId);
 			this.address = contracts.MintableRewardsFactory;
 			this.factory = MintableRewardsFactory__factory.connect(this.address, signerOrProvider);
-			this.store = AllowancesStore__factory.connect(contracts.AllowancesStore, signerOrProvider);
+			this.store = AllowancesStore__factory.connect(storeAddress || contracts.AllowancesStore, signerOrProvider);
 		} else {
+			if (!storeAddress) throw new Error("Undefined store");
 			this.address = factoryAddressOrChainId;
 			this.factory = MintableRewardsFactory__factory.connect(factoryAddressOrChainId as string, signerOrProvider);
-		}
-		if (storeAddress) {
 			this.store = AllowancesStore__factory.connect(storeAddress, signerOrProvider);
 		}
 	}
@@ -134,7 +133,7 @@ export class RewardsNFT {
 						contentUrl: RewardsNFT.escape(props.info.contentUrl),
 						contentHash: props.info.contentHash,
 						metadataUrl: RewardsNFT.escape(props.info.metadataUrl)
-					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], props.allowances || this.store!.address);
+					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], props.allowances || this.store.address);
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
 				while (received < confirmations) {
@@ -376,9 +375,25 @@ export class RewardsNFT {
 
 	public async updateAllowances(allowances:RewardsNFT.Allowance[], confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
-			if (!this.store) reject(new Error("Undefined store"));
 			try {
-				const tx = await this.store!.update(allowances);
+				const tx = await this.store.update(allowances);
+				let received = tx.confirmations;
+				await tx.wait();
+				while (received < confirmations) {
+					if (callback) callback(received, confirmations);
+					await tx.wait(received++);
+				}
+				resolve(true);
+			} catch (err) {
+				reject(err);
+			}
+		})(); });
+	}
+
+	public async updateAllowancesTo(receivers:string[], amount:number, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		return new Promise((resolve, reject) => { (async() => {
+			try {
+				const tx = await this.store.updateTo(receivers, amount);
 				let received = tx.confirmations;
 				await tx.wait();
 				while (received < confirmations) {
@@ -394,9 +409,8 @@ export class RewardsNFT {
 
 	public async requiredAllowances(): Promise<BigNumberish> {
 		return new Promise((resolve, reject) => { (async() => {
-			if (!this.store) reject(new Error("Undefined store"));
 			try {
-				resolve(await this.store!.totalAllowed());
+				resolve(await this.store.totalAllowed());
 			} catch (err) {
 				reject(err);
 			}
@@ -405,9 +419,8 @@ export class RewardsNFT {
 
 	public async listAllowances(): Promise<RewardsNFT.Allowance[]> {
 		return new Promise((resolve, reject) => { (async() => {
-			if (!this.store) reject(new Error("Undefined store"));
 			try {
-				resolve((await this.store!.list())
+				resolve((await this.store.list())
 					.map(it => ({ minter: it.minter, amount: it.amount } as RewardsNFT.Allowance)));
 			} catch (err) {
 				reject(err);
@@ -467,7 +480,7 @@ export class RewardsNFT {
 	public async grantStoreAdmin(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const tx = await this.store!.grantRole(roles.admin, address);
+				const tx = await this.store.grantRole(roles.admin, address);
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
 				while (received < confirmations) {
@@ -507,7 +520,7 @@ export class RewardsNFT {
 	public async revokeStoreAdmin(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const tx = await this.store!.revokeRole(roles.admin, address);
+				const tx = await this.store.revokeRole(roles.admin, address);
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
 				while (received < confirmations) {
@@ -543,7 +556,7 @@ export class RewardsNFT {
 	public async isStoreAdmin(address?:string): Promise<boolean> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				resolve(this.store!.hasRole(roles.admin, address || await (this.signerOrProvider as Signer).getAddress()));
+				resolve(this.store.hasRole(roles.admin, address || await (this.signerOrProvider as Signer).getAddress()));
 			} catch (err) {
 				reject(err);
 			}

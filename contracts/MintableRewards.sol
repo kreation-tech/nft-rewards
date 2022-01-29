@@ -86,6 +86,7 @@ contract MintableRewards is ERC721Upgradeable, IERC2981Upgradeable, IMintableEdi
     uint256 private withdrawn;
     mapping(address => uint256) private withdrawals;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer { }
 
     /**

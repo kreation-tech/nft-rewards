@@ -5,7 +5,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { RewardsNFT } from "../src/RewardsNFT";
 import { AllowancesStore, AllowancesStore__factory, MintableRewards, MintableRewardsFactory__factory } from "../src/types";
 import { fail } from "assert";
-import { BigNumberish } from "ethers";
+import { BigNumber, BigNumberish } from "ethers";
 
 const { expect } = require("chai");
 const { ethers, deployments } = require("hardhat");
@@ -27,12 +27,12 @@ describe("On RewardsNFT", () => {
 
 	before(async () => {
 		[deployer, artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // test wallets
-		const { MintableRewardsFactory, ArtemStakingRewards } = await deployments.fixture(["rewards"]);
+		const { MintableRewardsFactory, AllowancesStore } = await deployments.fixture(["rewards"]);
 		factoryAddress = MintableRewardsFactory.address;
-		storeAddress = ArtemStakingRewards.address;
+		storeAddress = AllowancesStore.address;
 		const factory = MintableRewardsFactory__factory.connect(factoryAddress, deployer);
 		await factory.grantRole(await factory.ARTIST_ROLE(), artist.address);
-		facade = new RewardsNFT(artist, factoryAddress);
+		facade = new RewardsNFT(artist, factoryAddress, storeAddress);
 		const info:RewardsNFT.Definition = {
 			info: {
 				name: "Emanuele",
@@ -176,6 +176,28 @@ describe("On RewardsNFT", () => {
 		await expect(await facade.isAllowedMinter(1, receiver.address)).to.be.true;
 		await expect(await facade.isAllowedMinter(1, curator.address)).to.be.true;
 		await expect(await facade.isAllowedMinter(1, shareholder.address)).to.be.true;
+	});
+
+	it("Admin is able to modify allowances", async () => {
+		const facade = new RewardsNFT(deployer, factoryAddress, storeAddress);
+		const required = (await facade.requiredAllowances()) as BigNumber;
+		const recipients = new Array<RewardsNFT.Allowance>(100);
+		for (let i = 0; i < recipients.length; i++) {
+			recipients[i] = { minter: ethers.Wallet.createRandom().address, amount: 10 };
+		}
+		await facade.updateAllowances(recipients);
+		expect(await facade.requiredAllowances()).to.be.equal(required.add(1000));
+	});
+
+	it("Admin is able to modify multiple allowances to the same value", async () => {
+		const facade = new RewardsNFT(deployer, factoryAddress, storeAddress);
+		const required = (await facade.requiredAllowances()) as BigNumber;
+		const recipients = new Array<string>(100);
+		for (let i = 0; i < recipients.length; i++) {
+			recipients[i] = ethers.Wallet.createRandom().address;
+		}
+		await facade.updateAllowancesTo(recipients, 10);
+		expect(await facade.requiredAllowances()).to.be.equal(required.add(1000));
 	});
 
 	it("Deployer can grant/revoke artists", async () => {

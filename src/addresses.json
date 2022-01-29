@@ -1,7 +1,7 @@
 {
   "4": {
-    "ArtemStakingRewards": "0x13BA828DC856b1609fD4106a4374FbFF142596ad",
-    "MintableRewards": "0xf9CBe61C20Dd5c731CE9Cd89c3E1aeB25df0d613",
-    "MintableRewardsFactory": "0xF1959797E71d5374A2289f7775E7c959fCb0D024"
+    "AllowancesStore": "0x22E630cFFF621C3dC3D99138459af85B89487bA7",
+    "MintableRewards": "0x8A0010978feb54bB2620788063C9802B0Ec9b5d7",
+    "MintableRewardsFactory": "0x724068D3bB45b87cBEfA2bef10b532d5db1423C9"
   }
 }
