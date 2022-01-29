@@ -42,15 +42,15 @@ contract MintableRewards is ERC721Upgradeable, IERC2981Upgradeable, IMintableEdi
     }
 
     struct Info {
-        // name of editions
+        // name of rewards
         string name;
         // symbol of the tokens minted by this contract
         string symbol;
         // content URL of the token editions
         string contentUrl;
-        // SHA256 of the token editions content in bytes32 format (0xHASH)
+        // SHA256 of the token rewards content in bytes32 format (0xHASH)
         bytes32 contentHash;
-        // token editions metadata URL
+        // token rewards metadata URL
         string metadataUrl;
     }
 
@@ -72,7 +72,7 @@ contract MintableRewards is ERC721Upgradeable, IERC2981Upgradeable, IMintableEdi
 
     address public allowancesRef; // 20
 
-    // addresses allowed to mint editions
+    // addresses allowed to mint rewards
     mapping(address => uint16) private allowedMinters;
 
     // price for sale
@@ -270,7 +270,7 @@ contract MintableRewards is ERC721Upgradeable, IERC2981Upgradeable, IMintableEdi
     }
 
     /**
-     * Returns the owner of the collection of editions.
+     * Returns the owner of the collection of rewards.
      */
     function owner() public view override(OwnableUpgradeable, IMintableEditions) returns (address) {
         return super.owner();
@@ -289,12 +289,13 @@ contract MintableRewards is ERC721Upgradeable, IERC2981Upgradeable, IMintableEdi
     }
 
     /**
-     * Allows for updates of edition urls by the owner of the edition.
-     * Only URLs can be updated (data-uris are supported), hashes cannot be updated.
+     * Allows for updates of content and metadata urls by the owner.
+     * Only URLs can be updated (data-uri are supported), hash cannot be updated.
      */
     function updateEditionsURLs(string memory _contentUrl, string memory _metadataUrl) external onlyOwner {
         require(bytes(_contentUrl).length > 0, "Empty content URL");
         contentUrl = _contentUrl;
+        require(bytes(_metadataUrl).length > 0, "Empty metadata URL");
         metadataUrl = _metadataUrl;
     }
 
@@ -345,9 +346,9 @@ contract MintableRewards is ERC721Upgradeable, IERC2981Upgradeable, IMintableEdi
     }
 
     /**
-     * Get URIs and hash for edition NFT
+     * Get URI and hash for edition NFT
      *
-     * @return contentUrl, contentHash
+     * @return metadataUrl, contentHash
      */
     function getURI() public view returns (string memory, bytes32, string memory) {
         return (contentUrl, contentHash, metadataUrl);

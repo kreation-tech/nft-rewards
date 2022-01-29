@@ -105,7 +105,7 @@ describe("On RewardsNFT", () => {
 	});
 
 	it("Anyone can retrive info of a MeNFT", async () => {
-		const anyone = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address);
+		const anyone = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address, storeAddress);
 		const nft = await (await anyone.get(1)).instance;
 
 		await expect(await nft.name()).to.be.equal("Emanuele");
@@ -139,23 +139,23 @@ describe("On RewardsNFT", () => {
 		await expect(await rewards.ownerOf(await rewards.totalSupply())).to.be.equal(receiver.address); // token ownership has been updated
 	});
 	it("None can mint if not authorized", async function () {
-		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
+		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address, storeAddress); // create a façade for the buyer
 		await expect(buyer.mint(1)).to.be.revertedWith("Minting not allowed");
 	});
 	it("Anyone can mint if authorized", async function () {
-		const buyer = new RewardsNFT(minter, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
+		const buyer = new RewardsNFT(minter, (await deployments.get("MintableRewardsFactory")).address, storeAddress); // create a façade for the buyer
 		await expect(await buyer.mint(1)).to.be.equal(await rewards.totalSupply());
 		await expect(await rewards.balanceOf(minter.address)).to.be.equal(1); // token is transferred
 		await expect(await rewards.ownerOf(await rewards.totalSupply())).to.be.equal(minter.address); // token ownership has been updated
 	});
 	it("Authorized minter with 0 allowance cannot mint", async function () {
-		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
+		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address, storeAddress); // create a façade for the buyer
 		await expect(buyer.mint(1)).to.be.revertedWith("Minting not allowed");
 	});
 	it("Anyone is able to purchase an edition", async () => {
 		rewards.connect(artist).setPrice(ethers.utils.parseEther("1.0")); // enables purchasing
 
-		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
+		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address, storeAddress); // create a façade for the buyer
 		const balance = await purchaser.getBalance(); // store balance before pourchase
 
 		await expect(await buyer.purchase(1))
@@ -204,7 +204,7 @@ describe("On RewardsNFT", () => {
 		facade.grantArtist(signer.address).then(() => fail("Should have failed"), () => {});
 		facade.revokeArtist(artist.address).then(() => fail("Should have failed"), () => {});
 
-		const admin = new RewardsNFT(deployer, factoryAddress);
+		const admin = new RewardsNFT(deployer, factoryAddress, storeAddress);
 		await expect(await admin.isArtist(signer.address)).to.be.false;
 
 		await expect(await admin.grantArtist(signer.address)).to.be.true;
@@ -215,51 +215,8 @@ describe("On RewardsNFT", () => {
 	});
 
 	it("Anyone can check role admin", async () => {
-		const admin = new RewardsNFT(deployer, factoryAddress);
+		const admin = new RewardsNFT(deployer, factoryAddress, storeAddress);
 		await expect(await admin.isAdmin(signer.address)).to.be.false;
 		await expect(await admin.isAdmin(deployer.address)).to.be.true;
-	});
-
-	it("Wrapper is able to escape definition data", async () => {
-		const info:RewardsNFT.Definition = {
-			info: {
-				// eslint-disable-next-line quotes
-				name: 'The "Big" Lele',
-				symbol: "LE\\LE",
-				contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
-				contentHash: "0x2f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
-				metadataUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu"
-			},
-			size: 500,
-			allowances: storeAddress
-		};
-		// when
-		const response = (await facade.create(info));
-		// then
-		const editions = response.instance;
-		expect(await editions.name()).to.be.equal("The \\\"Big\\\" Lele");
-		expect(await editions.symbol()).to.be.equal("LE\\\\LE");
-
-		await editions.mint();
-		expect(await editions.tokenURI(1)).to.be.equal("https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu?tokenId=1");
-	});
-
-	it("Wrapper is able to unescape definition data", async () => {
-		const info:RewardsNFT.Definition = {
-			info: {
-				name: "The \"Big\" Lele",
-				symbol: "LE\\LE",
-				contentUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
-				contentHash: "0x3f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
-				metadataUrl: "https://ipfs.io/ipfs/bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu"
-			},
-			allowances: storeAddress
-		};
-		// when
-		const response = (await facade.create(info));
-		// then
-		const editions = response.instance;
-		expect(RewardsNFT.unescape(await editions.name())).to.be.equal("The \"Big\" Lele");
-		expect(RewardsNFT.unescape(await editions.symbol())).to.be.equal("LE\\LE");
 	});
 });

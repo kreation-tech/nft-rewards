@@ -203,28 +203,29 @@ describe("MintableRewards", function () {
     await rewards.updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl", "https://ipfs.io/ipfs/newThumbnailUrl");
     expect(await rewards.contentUrl()).to.be.equal("https://ipfs.io/ipfs/newContentUrl");
     expect(await rewards.metadataUrl()).to.be.equal("https://ipfs.io/ipfs/newThumbnailUrl");
-    await expect(rewards.connect(minter).updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl2", "https://ipfs.io/ipfs/newThumbnailUrl2")).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(rewards.connect(purchaser).updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl2", "https://ipfs.io/ipfs/newThumbnailUrl2")).to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(rewards.connect(receiver).updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl2", "https://ipfs.io/ipfs/newThumbnailUrl2")).to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(rewards.connect(minter).updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl2", "https://ipfs.io/ipfs/newThumbnailUrl2"))
+      .to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(rewards.connect(purchaser).updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl2", "https://ipfs.io/ipfs/newThumbnailUrl2"))
+      .to.be.revertedWith("Ownable: caller is not the owner");
+    await expect(rewards.connect(receiver).updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl2", "https://ipfs.io/ipfs/newThumbnailUrl2"))
+      .to.be.revertedWith("Ownable: caller is not the owner");
     expect(await rewards.contentUrl()).to.be.equal("https://ipfs.io/ipfs/newContentUrl");
-    expect(await rewards.metadataUrl()).to.be.equal("https://ipfs.io/ipfs/newThumbnailUrl");
 
-    await expect(rewards.updateEditionsURLs("", "https://ipfs.io/ipfs/newThumbnailUrl")).to.be.revertedWith("Empty content URL");
+    await expect(rewards.updateEditionsURLs("", "https://ipfs.io/ipfs/newMetadataUrl")).to.be.revertedWith("Empty content URL");
   });
 
-  it("Artist only can update thumbnail URL, also to empty value", async function () {
-    await rewards.updateEditionsURLs("ipfs://content", "ipfs://thumbnail");
-    await expect(await rewards.metadataUrl()).to.be.equal("ipfs://thumbnail");
+  it("Artist only can update metadata URL, but only to non empty value", async function () {
+    await rewards.updateEditionsURLs("ipfs://content", "ipfs://metadata");
+    await expect(await rewards.metadataUrl()).to.be.equal("ipfs://metadata");
 
-    await expect(rewards.connect(minter).updateEditionsURLs("ipfs://content", "ipfs://thumbnail"))
+    await expect(rewards.connect(minter).updateEditionsURLs("ipfs://content", "ipfs://metadata"))
       .to.be.revertedWith("Ownable: caller is not the owner");
-    await expect(rewards.connect(receiver).updateEditionsURLs("ipfs://content", "ipfs://thumbnail"))
+    await expect(rewards.connect(receiver).updateEditionsURLs("ipfs://content", "ipfs://metadata"))
       .to.be.revertedWith("Ownable: caller is not the owner");
     await expect(rewards.connect(purchaser).updateEditionsURLs("ipfs://content", ""))
       .to.be.revertedWith("Ownable: caller is not the owner");
 
-    await rewards.updateEditionsURLs("ipfs://content.new", "");
-    await expect(await rewards.metadataUrl()).to.be.equal("");
+    await expect(rewards.updateEditionsURLs("https://ipfs.io/ipfs/newContentUrl", "")).to.be.revertedWith("Empty metadata URL");
   });
 
   it("Artist can withdraw its shares", async function () {

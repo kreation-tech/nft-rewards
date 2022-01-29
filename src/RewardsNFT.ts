@@ -53,9 +53,8 @@ export class RewardsNFT {
 	public store:AllowancesStore;
 	public roles:{[key: string]: string} = roles;
 
-	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number, storeAddress?: string) {
+	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number, storeAddress: string) {
 		this.signerOrProvider = signerOrProvider;
-		if (!storeAddress) throw new Error("Undefined store");
 		if (typeof (factoryAddressOrChainId) !== "string") {
 			// load Factory contract
 			const contracts:{[key: string]: string} = (addresses as {[key: string]: {[name: string]: string}})[factoryAddressOrChainId.toString()];
@@ -84,15 +83,6 @@ export class RewardsNFT {
 			}
 			resolve(chainId);
 		});
-	}
-
-	public static escape(value:string):string {
-		const stringified = JSON.stringify(value);
-		return stringified.substring(0, stringified.length - 1).substring(1);
-	}
-
-	public static unescape(value:string):string {
-		return JSON.parse("\"" + value + "\"");
 	}
 
 	public async metadata(title:string, description:string, uri:string, hash:string, thumbnail?:string): Promise<string> {
@@ -127,11 +117,11 @@ export class RewardsNFT {
 			try {
 				const tx = await this.factory
 					.create({
-						name: RewardsNFT.escape(props.info.name),
-						symbol: RewardsNFT.escape(props.info.symbol),
-						contentUrl: RewardsNFT.escape(props.info.contentUrl),
+						name: props.info.name,
+						symbol: props.info.symbol,
+						contentUrl: props.info.contentUrl,
 						contentHash: props.info.contentHash,
-						metadataUrl: RewardsNFT.escape(props.info.metadataUrl)
+						metadataUrl: props.info.metadataUrl
 					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], props.allowances || this.store.address);
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
