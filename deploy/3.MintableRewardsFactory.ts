@@ -8,9 +8,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   try {
     const proxy = await deployments.get("MintableRewardsFactory");
-    const upgrade = await upgrades.upgradeProxy(proxy.address, await hre.ethers.getContractFactory("MintableRewardsFactory"));
-    // eslint-disable-next-line quotes
-    console.log(`upgraded proxied contract "MintableRewardsFactory" at ${proxy.address} to impl ${await upgrades.erc1967.getImplementationAddress(upgrade.address)}`);
+    if (process.env.UPGRADE_FACTORY) {
+      const upgrade = await upgrades.upgradeProxy(proxy.address, await hre.ethers.getContractFactory("MintableRewardsFactory"));
+      console.log(`upgraded proxied contract "MintableRewardsFactory" at ${proxy.address} to impl ${await upgrades.erc1967.getImplementationAddress(upgrade.address)}`);
+    } else {
+      console.log(`reusing "MintableRewardsFactory" at ${proxy.address} as proxy`);
+    }
   } catch (err) {
     const template = await deployments.get("MintableRewards");
     const factory = await hre.ethers.getContractFactory("MintableRewardsFactory");
