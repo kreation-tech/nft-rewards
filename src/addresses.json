@@ -1,4 +1,8 @@
 {
+  "1": {
+    "MintableRewards": "0xb60123d62915aF96365122b70F5c4C861cd3E686",
+    "MintableRewardsFactory": "0x81ce0A3DBF309fDcF6Df1b28D327AdD9E81CaeEa"
+  },
   "4": {
     "MintableRewards": "0xBB0F09b9d6237Be4087b255D42dDf0B5c5E4b74E",
     "MintableRewardsFactory": "0x8b31bABbA5Ea437AF55c5EacB0fF0B6df99B55B4"
