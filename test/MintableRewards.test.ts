@@ -18,6 +18,7 @@ describe("MintableRewards", function () {
   let rewards: MintableRewards;
   let factory: MintableRewardsFactory;
   let store: AllowancesStore;
+  let silverAddress: string;
   let recipients: { minter: string; amount: BigNumberish; }[];
 
   before(async () => {
@@ -30,9 +31,10 @@ describe("MintableRewards", function () {
   });
 
   beforeEach(async () => {
-    const { MintableRewardsFactory, AllowancesStore } = await deployments.fixture(["rewards"]);
+    const { MintableRewardsFactory, ArtemGold, ArtemSilver } = await deployments.fixture(["rewards"]);
     factory = (await ethers.getContractAt("MintableRewardsFactory", MintableRewardsFactory.address)) as MintableRewardsFactory;
-    store = (await ethers.getContractAt("AllowancesStore", AllowancesStore.address)) as AllowancesStore;
+    store = (await ethers.getContractAt("AllowancesStore", ArtemGold.address)) as AllowancesStore;
+    silverAddress = ArtemSilver.address;
     await store.update(recipients);
     const receipt = await (await factory.connect(artist).create(
       {
@@ -443,5 +445,14 @@ describe("MintableRewards", function () {
     await rewards.airdrop(0, 300);
     await rewards.airdrop(300, 600);
     expect(await rewards.totalSupply()).to.be.equal(await store.totalAllowed());
+  });
+
+  it("Artist only is able to change store", async function () {
+    expect(await rewards.allowancesRef()).to.be.equal(store.address);
+    await rewards.updateAllowancesRef(silverAddress);
+    expect(await rewards.allowancesRef()).to.be.equal(silverAddress);
+
+    await expect(rewards.connect(curator).updateAllowancesRef(silverAddress))
+      .to.be.revertedWith("'Ownable: caller is not the owner");
   });
 });

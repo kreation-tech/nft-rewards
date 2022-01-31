@@ -27,7 +27,7 @@ describe("MintableRewardsFactory", function () {
 
   beforeEach(async () => {
     [deployer, artist, shareholder, other] = await ethers.getSigners();
-    const { MintableRewardsFactory, AllowancesStore } = await deployments.fixture(["rewards"]);
+    const { MintableRewardsFactory, ArtemGold } = await deployments.fixture(["rewards"]);
     factory = (await ethers.getContractAt("MintableRewardsFactory", MintableRewardsFactory.address)) as MintableRewardsFactory;
     await factory.grantRole(await factory.ARTIST_ROLE(), artist.address);
 
@@ -37,7 +37,7 @@ describe("MintableRewardsFactory", function () {
     }
     recipients.push({ minter: deployer.address, amount: 50 });
     recipients.push({ minter: shareholder.address, amount: 100 });
-    store = (await ethers.getContractAt("AllowancesStore", AllowancesStore.address)) as AllowancesStore;
+    store = (await ethers.getContractAt("AllowancesStore", ArtemGold.address)) as AllowancesStore;
     await store.update(recipients);
   });
 

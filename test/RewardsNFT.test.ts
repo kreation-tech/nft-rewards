@@ -27,9 +27,9 @@ describe("On RewardsNFT", () => {
 
 	before(async () => {
 		[deployer, artist, shareholder, curator, receiver, purchaser, minter, signer] = await ethers.getSigners(); // test wallets
-		const { MintableRewardsFactory, AllowancesStore } = await deployments.fixture(["rewards"]);
+		const { MintableRewardsFactory, ArtemGold } = await deployments.fixture(["rewards"]);
 		factoryAddress = MintableRewardsFactory.address;
-		storeAddress = AllowancesStore.address;
+		storeAddress = ArtemGold.address;
 		const factory = MintableRewardsFactory__factory.connect(factoryAddress, deployer);
 		await factory.grantRole(await factory.ARTIST_ROLE(), artist.address);
 		facade = new RewardsNFT(artist, factoryAddress, storeAddress);
@@ -181,12 +181,12 @@ describe("On RewardsNFT", () => {
 	it("Admin is able to modify allowances", async () => {
 		const facade = new RewardsNFT(deployer, factoryAddress, storeAddress);
 		const required = (await facade.requiredAllowances()) as BigNumber;
-		const recipients = new Array<RewardsNFT.Allowance>(100);
+		const recipients = new Array<RewardsNFT.Allowance>(400);
 		for (let i = 0; i < recipients.length; i++) {
-			recipients[i] = { minter: ethers.Wallet.createRandom().address, amount: 10 };
+			recipients[i] = { minter: ethers.Wallet.createRandom().address, amount: 5 };
 		}
 		await facade.updateAllowances(recipients);
-		expect(await facade.requiredAllowances()).to.be.equal(required.add(1000));
+		expect(await facade.requiredAllowances()).to.be.equal(required.add(recipients.length * 5));
 	});
 
 	it("Admin is able to modify multiple allowances to the same value", async () => {
