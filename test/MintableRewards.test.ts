@@ -449,9 +449,10 @@ describe("MintableRewards", function () {
 
   it("Artist only is able to change store", async function () {
     expect(await rewards.allowancesRef()).to.be.equal(store.address);
+    expect(await rewards.allowanceOf(minter.address)).to.be.equal(50);
     await rewards.updateAllowancesRef(silverAddress);
     expect(await rewards.allowancesRef()).to.be.equal(silverAddress);
-
+    expect(await rewards.allowanceOf(minter.address)).to.be.equal(0);
     await expect(rewards.connect(curator).updateAllowancesRef(silverAddress))
       .to.be.revertedWith("'Ownable: caller is not the owner");
   });
