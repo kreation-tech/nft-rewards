@@ -4,24 +4,32 @@ import { readFileSync, writeFileSync } from "fs";
 import { ethers } from "ethers";
 
 const { get } = deployments;
-const contracts:{[name: string]: string} = {};
-const roles:{[name: string]: string} = {};
 
-async function addressOf(contract:string) {
+async function addressOf(contract:string, obj:any) {
   const deployment = await get(contract);
-  contracts[contract] = deployment.address;
+  obj[contract] = deployment.address;
 }
 
 async function main() {
   const addresses = JSON.parse(readFileSync("./src/addresses.json", "utf-8"));
+  const contracts:{[name: string]: string} = {};
   addresses[await getChainId()] = contracts;
 
-  await addressOf("MintableRewards");
-  await addressOf("MintableRewardsFactory");
+  await addressOf("MintableRewards", contracts);
+  await addressOf("MintableRewardsFactory", contracts);
   writeFileSync("./src/addresses.json", JSON.stringify(addresses, null, 2), { encoding: "utf-8" });
 
-  roles.admin = await ethers.constants.HashZero;
-  roles.artist = await ethers.utils.keccak256(ethers.utils.toUtf8Bytes("ARTIST_ROLE"));
+  const levels = JSON.parse(readFileSync("./src/stores.json", "utf-8"));
+  const rewards:{[name: string]: string} = {};
+  levels[await getChainId()] = rewards;
+  await addressOf("ArtemGold", rewards);
+  await addressOf("ArtemSilver", rewards);
+  await addressOf("ArtemPlatinum", rewards);
+  writeFileSync("./src/stores.json", JSON.stringify(levels, null, 2), { encoding: "utf-8" });
+
+  const roles:{[name: string]: string} = {};
+  roles.admin = ethers.constants.HashZero;
+  roles.artist = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("ARTIST_ROLE"));
   writeFileSync("./src/roles.json", JSON.stringify(roles, null, 2), { encoding: "utf-8" });
 }
 

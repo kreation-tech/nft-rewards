@@ -299,6 +299,14 @@ contract MintableRewards is ERC721Upgradeable, IERC2981Upgradeable, IMintableEdi
         metadataUrl = _metadataUrl;
     }
 
+    /**
+     * Allows owner to update the allowances reference contract use for this rewards.
+     */
+    function updateAllowancesRef(address _allowancesRef) external onlyOwner {
+        require(AddressUpgradeable.isContract(_allowancesRef), "Invalid new reference");
+        allowancesRef = _allowancesRef;
+    }
+
     /** 
      * Returns the number of tokens still available for minting (uint64 when open edition)
      */
