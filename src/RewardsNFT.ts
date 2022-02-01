@@ -12,7 +12,7 @@ import { Provider } from "@ethersproject/providers";
 import { Signer } from "@ethersproject/abstract-signer";
 // eslint-disable-next-line camelcase
 import { MintableRewardsFactory__factory, MintableRewards__factory, AllowancesStore__factory } from "./types";
-import type { MintableRewardsFactory, MintableRewards, AllowancesStore } from "./types";
+import type { MintableRewardsFactory, MintableRewards } from "./types";
 import { BigNumber, BigNumberish } from "@ethersproject/bignumber";
 import addresses from "./addresses.json";
 import roles from "./roles.json";
@@ -41,8 +41,7 @@ export declare namespace RewardsNFT {
 		shares?: {
 			holder: string;
 			bps: number
-		}[],
-		allowances?: string
+		}[]
 	}
 }
 
@@ -50,10 +49,9 @@ export class RewardsNFT {
 	private signerOrProvider: Signer | Provider;
 	public readonly factory: MintableRewardsFactory;
 	public address:string;
-	public store:AllowancesStore;
 	public roles:{[key: string]: string} = roles;
 
-	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number, storeAddress: string) {
+	constructor (signerOrProvider: Signer | Provider, factoryAddressOrChainId: string | number) {
 		this.signerOrProvider = signerOrProvider;
 		if (typeof (factoryAddressOrChainId) !== "string") {
 			// load Factory contract
@@ -65,7 +63,6 @@ export class RewardsNFT {
 			this.address = factoryAddressOrChainId;
 			this.factory = MintableRewardsFactory__factory.connect(factoryAddressOrChainId as string, signerOrProvider);
 		}
-		this.store = AllowancesStore__factory.connect(storeAddress, signerOrProvider);
 	}
 
 	/**
@@ -106,13 +103,11 @@ export class RewardsNFT {
 	 * Creates a new EdNFT
 	 *
 	 * @param props the properties to assign to the editionable NFT to create
+	 * @param allowanceStore the allowance store to assign to the editionable NFT
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
 	 * @param callback a callback function reporting received confirmations
 	 */
-	public async create(props:RewardsNFT.Definition, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<{id:BigNumber, address:string, instance:MintableRewards}> {
-		if (!props.allowances && !this.store) {
-			throw new Error("Allowances store address required");
-		}
+	public async create(props:RewardsNFT.Definition, allowanceStore:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<{id:BigNumber, address:string, instance:MintableRewards}> {
 		return new Promise((resolve, reject) => { (async() => {
 			try {
 				const tx = await this.factory
@@ -122,7 +117,7 @@ export class RewardsNFT {
 						contentUrl: props.info.contentUrl,
 						contentHash: props.info.contentHash,
 						metadataUrl: props.info.metadataUrl
-					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], props.allowances || this.store.address);
+					}, props.size || 0, props.price || 0, props.royalties || 0, props.shares || [], allowanceStore);
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
 				while (received < confirmations) {
@@ -362,10 +357,11 @@ export class RewardsNFT {
 		})(); });
 	}
 
-	public async updateAllowances(allowances:RewardsNFT.Allowance[], confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+	public async updateAllowances(allowanceStore:string, allowances:RewardsNFT.Allowance[], confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		const store = AllowancesStore__factory.connect(allowanceStore, this.signerOrProvider);
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const tx = await this.store.update(allowances);
+				const tx = await store.update(allowances);
 				let received = tx.confirmations;
 				await tx.wait();
 				while (received < confirmations) {
@@ -379,10 +375,11 @@ export class RewardsNFT {
 		})(); });
 	}
 
-	public async updateAllowancesTo(receivers:string[], amount:number, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+	public async updateAllowancesTo(allowanceStore:string, receivers:string[], amount:number, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		const store = AllowancesStore__factory.connect(allowanceStore, this.signerOrProvider);
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const tx = await this.store.updateTo(receivers, amount);
+				const tx = await store.updateTo(receivers, amount);
 				let received = tx.confirmations;
 				await tx.wait();
 				while (received < confirmations) {
@@ -396,20 +393,22 @@ export class RewardsNFT {
 		})(); });
 	}
 
-	public async requiredAllowances(): Promise<BigNumberish> {
+	public async requiredAllowances(allowanceStore:string): Promise<BigNumberish> {
+		const store = AllowancesStore__factory.connect(allowanceStore, this.signerOrProvider);
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				resolve(await this.store.totalAllowed());
+				resolve(await store.totalAllowed());
 			} catch (err) {
 				reject(err);
 			}
 		})(); });
 	}
 
-	public async listAllowances(): Promise<RewardsNFT.Allowance[]> {
+	public async listAllowances(allowanceStore:string): Promise<RewardsNFT.Allowance[]> {
+		const store = AllowancesStore__factory.connect(allowanceStore, this.signerOrProvider);
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				resolve((await this.store.list())
+				resolve((await store.list())
 					.map(it => ({ minter: it.minter, amount: it.amount } as RewardsNFT.Allowance)));
 			} catch (err) {
 				reject(err);
@@ -462,14 +461,16 @@ export class RewardsNFT {
 	/**
 	 * Grants admin permissions on the store to an address
 	 *
+	 * @param allowanceStore the allowance store address
 	 * @param address the address to grant
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
 	 * @param callback a callback function reporting received confirmations
 	 */
-	public async grantStoreAdmin(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+	public async grantStoreAdmin(allowanceStore:string, address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		const store = AllowancesStore__factory.connect(allowanceStore, this.signerOrProvider);
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const tx = await this.store.grantRole(roles.admin, address);
+				const tx = await store.grantRole(roles.admin, address);
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
 				while (received < confirmations) {
@@ -502,14 +503,16 @@ export class RewardsNFT {
 	/**
 	 * Revokes admin permissions on the store from an address
 	 *
+	 * @param allowanceStore the allowance store address
 	 * @param address the address to revoke
 	 * @param confirmations the number of confirmations to wait for, deafults to 1
 	 * @param callback a callback function reporting received confirmations
 	 */
-	public async revokeStoreAdmin(address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+	public async revokeStoreAdmin(allowanceStore:string, address:string, confirmations:number = 1, callback?:(received:number, requested:number) => void): Promise<boolean> {
+		const store = AllowancesStore__factory.connect(allowanceStore, this.signerOrProvider);
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				const tx = await this.store.revokeRole(roles.admin, address);
+				const tx = await store.revokeRole(roles.admin, address);
 				let received = tx.confirmations;
 				let receipt = await tx.wait();
 				while (received < confirmations) {
@@ -540,12 +543,14 @@ export class RewardsNFT {
 	/**
 	 * Checks if an address is listed as store admin
 	 *
+	 * @param allowanceStore the allowance store address
 	 * @param address the address to check, defaults to current signer
 	 */
-	public async isStoreAdmin(address?:string): Promise<boolean> {
+	public async isStoreAdmin(allowanceStore:string, address?:string): Promise<boolean> {
+		const store = AllowancesStore__factory.connect(allowanceStore, this.signerOrProvider);
 		return new Promise((resolve, reject) => { (async() => {
 			try {
-				resolve(this.store.hasRole(roles.admin, address || await (this.signerOrProvider as Signer).getAddress()));
+				resolve(store.hasRole(roles.admin, address || await (this.signerOrProvider as Signer).getAddress()));
 			} catch (err) {
 				reject(err);
 			}

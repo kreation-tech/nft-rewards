@@ -32,7 +32,7 @@ describe("On RewardsNFT", () => {
 		storeAddress = ArtemGold.address;
 		const factory = MintableRewardsFactory__factory.connect(factoryAddress, deployer);
 		await factory.grantRole(await factory.ARTIST_ROLE(), artist.address);
-		facade = new RewardsNFT(artist, factoryAddress, storeAddress);
+		facade = new RewardsNFT(artist, factoryAddress);
 		const info:RewardsNFT.Definition = {
 			info: {
 				name: "Emanuele",
@@ -44,10 +44,9 @@ describe("On RewardsNFT", () => {
 			size: 1000,
 			price: ethers.utils.parseEther("1.0"),
 			royalties: 250,
-			shares: [{ holder: curator.address, bps: 100 }],
-			allowances: storeAddress
+			shares: [{ holder: curator.address, bps: 100 }]
 		};
-		rewards = (await facade.create(info)).instance;
+		rewards = (await facade.create(info, storeAddress)).instance;
 		store = AllowancesStore__factory.connect(storeAddress, deployer);
 		const recipients = new Array<{ minter: string, amount: BigNumberish }>(0);
 		recipients.push({ minter: minter.address, amount: 10 });
@@ -67,11 +66,10 @@ describe("On RewardsNFT", () => {
 			size: 1000,
 			price: ethers.utils.parseEther("1.0"),
 			royalties: 250,
-			shares: [{ holder: curator.address, bps: 100 }],
-			allowances: storeAddress
+			shares: [{ holder: curator.address, bps: 100 }]
 		};
 		// when
-		const response = (await facade.create(info));
+		const response = (await facade.create(info, storeAddress));
 
 		// then
 		expect(response.id).to.be.equal(2);
@@ -89,11 +87,10 @@ describe("On RewardsNFT", () => {
 				contentUrl: "ipfs://bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu",
 				contentHash: "0x6f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca",
 				metadataUrl: "ipfs://bafybeib52yyp5jm2vwifd65mv3fdmno6dazwzyotdklpyq2sv6g2ajlgxu"
-			},
-			allowances: storeAddress
+			}
 		};
 		// when
-		const editions = (await facade.create(info)).instance;
+		const editions = (await facade.create(info, storeAddress)).instance;
 		// then
 		expect(await editions.connect(artist).name()).to.be.equal("Emanuele");
 		expect(await editions.connect(artist).contentHash()).to.be.equal("0x6f9fd2ab1432ad0f45e1ee8f789a37ea6186cc408763bb9bd93055a7c7c2b2ca");
@@ -105,7 +102,7 @@ describe("On RewardsNFT", () => {
 	});
 
 	it("Anyone can retrive info of a MeNFT", async () => {
-		const anyone = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address, storeAddress);
+		const anyone = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address);
 		const nft = await (await anyone.get(1)).instance;
 
 		await expect(await nft.name()).to.be.equal("Emanuele");
@@ -139,23 +136,23 @@ describe("On RewardsNFT", () => {
 		await expect(await rewards.ownerOf(await rewards.totalSupply())).to.be.equal(receiver.address); // token ownership has been updated
 	});
 	it("None can mint if not authorized", async function () {
-		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address, storeAddress); // create a façade for the buyer
+		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
 		await expect(buyer.mint(1)).to.be.revertedWith("Minting not allowed");
 	});
 	it("Anyone can mint if authorized", async function () {
-		const buyer = new RewardsNFT(minter, (await deployments.get("MintableRewardsFactory")).address, storeAddress); // create a façade for the buyer
+		const buyer = new RewardsNFT(minter, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
 		await expect(await buyer.mint(1)).to.be.equal(await rewards.totalSupply());
 		await expect(await rewards.balanceOf(minter.address)).to.be.equal(1); // token is transferred
 		await expect(await rewards.ownerOf(await rewards.totalSupply())).to.be.equal(minter.address); // token ownership has been updated
 	});
 	it("Authorized minter with 0 allowance cannot mint", async function () {
-		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address, storeAddress); // create a façade for the buyer
+		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
 		await expect(buyer.mint(1)).to.be.revertedWith("Minting not allowed");
 	});
 	it("Anyone is able to purchase an edition", async () => {
 		rewards.connect(artist).setPrice(ethers.utils.parseEther("1.0")); // enables purchasing
 
-		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address, storeAddress); // create a façade for the buyer
+		const buyer = new RewardsNFT(purchaser, (await deployments.get("MintableRewardsFactory")).address); // create a façade for the buyer
 		const balance = await purchaser.getBalance(); // store balance before pourchase
 
 		await expect(await buyer.purchase(1))
@@ -179,32 +176,32 @@ describe("On RewardsNFT", () => {
 	});
 
 	it("Admin is able to modify allowances", async () => {
-		const facade = new RewardsNFT(deployer, factoryAddress, storeAddress);
-		const required = (await facade.requiredAllowances()) as BigNumber;
+		const facade = new RewardsNFT(deployer, factoryAddress);
+		const required = (await facade.requiredAllowances(storeAddress)) as BigNumber;
 		const recipients = new Array<RewardsNFT.Allowance>(400);
 		for (let i = 0; i < recipients.length; i++) {
 			recipients[i] = { minter: ethers.Wallet.createRandom().address, amount: 5 };
 		}
-		await facade.updateAllowances(recipients);
-		expect(await facade.requiredAllowances()).to.be.equal(required.add(recipients.length * 5));
+		await facade.updateAllowances(storeAddress, recipients);
+		expect(await facade.requiredAllowances(storeAddress)).to.be.equal(required.add(recipients.length * 5));
 	});
 
 	it("Admin is able to modify multiple allowances to the same value", async () => {
-		const facade = new RewardsNFT(deployer, factoryAddress, storeAddress);
-		const required = (await facade.requiredAllowances()) as BigNumber;
+		const facade = new RewardsNFT(deployer, factoryAddress);
+		const required = (await facade.requiredAllowances(storeAddress)) as BigNumber;
 		const recipients = new Array<string>(100);
 		for (let i = 0; i < recipients.length; i++) {
 			recipients[i] = ethers.Wallet.createRandom().address;
 		}
-		await facade.updateAllowancesTo(recipients, 10);
-		expect(await facade.requiredAllowances()).to.be.equal(required.add(1000));
+		await facade.updateAllowancesTo(storeAddress, recipients, 10);
+		expect(await facade.requiredAllowances(storeAddress)).to.be.equal(required.add(1000));
 	});
 
 	it("Deployer can grant/revoke artists", async () => {
 		facade.grantArtist(signer.address).then(() => fail("Should have failed"), () => {});
 		facade.revokeArtist(artist.address).then(() => fail("Should have failed"), () => {});
 
-		const admin = new RewardsNFT(deployer, factoryAddress, storeAddress);
+		const admin = new RewardsNFT(deployer, factoryAddress);
 		await expect(await admin.isArtist(signer.address)).to.be.false;
 
 		await expect(await admin.grantArtist(signer.address)).to.be.true;
@@ -215,7 +212,7 @@ describe("On RewardsNFT", () => {
 	});
 
 	it("Anyone can check role admin", async () => {
-		const admin = new RewardsNFT(deployer, factoryAddress, storeAddress);
+		const admin = new RewardsNFT(deployer, factoryAddress);
 		await expect(await admin.isAdmin(signer.address)).to.be.false;
 		await expect(await admin.isAdmin(deployer.address)).to.be.true;
 	});
