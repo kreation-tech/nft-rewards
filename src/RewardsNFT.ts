@@ -393,7 +393,7 @@ export class RewardsNFT {
 		})(); });
 	}
 
-	public async requiredAllowances(allowanceStore:string): Promise<BigNumberish> {
+	public async totalAllowed(allowanceStore:string): Promise<BigNumberish> {
 		const store = AllowancesStore__factory.connect(allowanceStore, this.signerOrProvider);
 		return new Promise((resolve, reject) => { (async() => {
 			try {
