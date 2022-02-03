@@ -61,19 +61,31 @@ const config: HardhatUserConfig = {
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      gasPrice: 70000000000, // 70 Gwei
+      //gasPrice: 70000000000, // 70 Gwei
       accounts: [process.env.PRIVATE_KEY || ""],
+    },
+    // POLYGON
+    matic: {
+      url: "https://rpc-mainnet.maticvigil.com/v1/e7de237acd5484091bee6069b17afae4ec574248",
+      accounts: [process.env.PRIVATE_KEY || ""]
+    },
+    mumbai: {
+      url: "https://polygon-mumbai.g.alchemy.com/v2/9Fla88CqVDyOrG9wfuwgpDYr1h0wtSE0",
+      accounts: [process.env.PRIVATE_KEY || ""]
     }
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: process.env.ETHERSCAN_API_KEY
+    //apiKey: process.env.POLYGONSCAN_API_KEY
+    //apiKey: process.env.BSCSCAN_API_KEY
   },
+
   gasReporter: {
     currency: "USD",
     enabled: process.env.REPORT_GAS !== undefined,
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
-    maxMethodDiff: 10,
-    gasPrice: 100
+    //gasPrice: 100,
+    maxMethodDiff: 10
   },
   typechain: {
     outDir: "src/types"
