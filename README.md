@@ -9,6 +9,8 @@ This is a customization of the more general [EdNFT contract](https://github.com/
 
 Once minted, the editions behave very much like any other NFT implementing the `ERC-721` specifications: they can be transferred, auctioned and burnt as their specific owner decide.
 
+![](https://github.com/kreation-tech/nft-rewards/raw/main/structure.drawio.png)
+
 # Standards
 
 The NFTs comply with the following EIP standards:
