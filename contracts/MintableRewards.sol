@@ -370,7 +370,7 @@ contract MintableRewards is ERC721Upgradeable, IERC2981Upgradeable, IMintableEdi
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "Edition doesn't exist");
-        return string(abi.encodePacked(metadataUrl, "?tokenId=", StringsUpgradeable.toString(tokenId)));
+        return string(metadataUrl);
     }
     
     /**

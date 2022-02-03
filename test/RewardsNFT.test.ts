@@ -177,24 +177,24 @@ describe("On RewardsNFT", () => {
 
 	it("Admin is able to modify allowances", async () => {
 		const facade = new RewardsNFT(deployer, factoryAddress);
-		const required = (await facade.requiredAllowances(storeAddress)) as BigNumber;
+		const required = (await facade.totalAllowed(storeAddress)) as BigNumber;
 		const recipients = new Array<RewardsNFT.Allowance>(400);
 		for (let i = 0; i < recipients.length; i++) {
 			recipients[i] = { minter: ethers.Wallet.createRandom().address, amount: 5 };
 		}
 		await facade.updateAllowances(storeAddress, recipients);
-		expect(await facade.requiredAllowances(storeAddress)).to.be.equal(required.add(recipients.length * 5));
+		expect(await facade.totalAllowed(storeAddress)).to.be.equal(required.add(recipients.length * 5));
 	});
 
 	it("Admin is able to modify multiple allowances to the same value", async () => {
 		const facade = new RewardsNFT(deployer, factoryAddress);
-		const required = (await facade.requiredAllowances(storeAddress)) as BigNumber;
+		const required = (await facade.totalAllowed(storeAddress)) as BigNumber;
 		const recipients = new Array<string>(100);
 		for (let i = 0; i < recipients.length; i++) {
 			recipients[i] = ethers.Wallet.createRandom().address;
 		}
 		await facade.updateAllowancesTo(storeAddress, recipients, 10);
-		expect(await facade.requiredAllowances(storeAddress)).to.be.equal(required.add(1000));
+		expect(await facade.totalAllowed(storeAddress)).to.be.equal(required.add(1000));
 	});
 
 	it("Deployer can grant/revoke artists", async () => {

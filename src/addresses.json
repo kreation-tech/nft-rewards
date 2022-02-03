@@ -1,10 +1,10 @@
 {
   "1": {
-    "MintableRewards": "0xb60123d62915aF96365122b70F5c4C861cd3E686",
+    "MintableRewards": "0x2C9Ad991a9cb036Fa568f60ee699aCD2fAbBc781",
     "MintableRewardsFactory": "0x81ce0A3DBF309fDcF6Df1b28D327AdD9E81CaeEa"
   },
   "4": {
-    "MintableRewards": "0xFb779f51f6000C66DeE19aBeF9b8FeBB92555293",
+    "MintableRewards": "0x20A5D03B3120eB43cfcD8E921E5A40ab97226ca8",
     "MintableRewardsFactory": "0x8b31bABbA5Ea437AF55c5EacB0fF0B6df99B55B4"
   }
 }

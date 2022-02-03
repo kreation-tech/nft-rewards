@@ -17,9 +17,9 @@
   "homepage": "https://github.com/kreation-tech/nft-rewards#readme",
   "scripts": {
     "compile": "hardhat compile",
-    "deploy": "hardhat deploy && hardhat run scripts/deploy.ts",
-    "verify": "hardhat run scripts/verify.ts",
-    "test": "hardhat test --network hardhat --deploy-fixture",
+    "deploy": "hardhat deploy --network $npm_config_network && hardhat run scripts/deploy.ts --network $npm_config_network",
+    "verify": "hardhat run scripts/verify.ts --network $npm_config_network",
+    "test": "hardhat test --network hardhat",
     "build": "hardhat compile && tsc",
     "postbuild": "npm-prepare-dist && ts-node scripts/postbuild.ts",
     "clean": "npx hardhat clean && rm -rf dist",
