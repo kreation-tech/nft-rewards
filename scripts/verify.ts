@@ -5,6 +5,7 @@ const { get } = deployments;
 
 async function verify(contract:string, args: any[]) {
   const deployment = await get(contract);
+  console.log(`Verifying ${contract} at ${deployment.address}...`);
   try {
     await run("verify:verify", {
       address: deployment.address,
